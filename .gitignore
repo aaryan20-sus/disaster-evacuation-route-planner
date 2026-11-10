@@ -1,0 +1,15 @@
+# Binaries and object files
+bin/*.exe
+bin/*.o
+*.exe
+*.o
+*.obj
+
+# VS Code and IDE cache
+.vscode/
+.idea/
+
+# OS specific files
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/

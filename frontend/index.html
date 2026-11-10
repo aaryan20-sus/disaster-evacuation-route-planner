@@ -1,0 +1,334 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Route Planner - Dynamic Evacuation Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <div class="app-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+      </div>
+      <div class="app-titles">
+        <h1 class="project-title">Emergency Route Planner</h1>
+        <span class="project-subtitle">Dynamic Evacuation Management</span>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <div class="connection-status" id="systemStatus">
+        <span class="status-indicator-dot"></span>
+        <span class="status-label">C++ Engine: Connected</span>
+      </div>
+      <button class="btn btn-secondary btn-compact" id="btnQuickReset" title="Restore baseline network conditions">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+        Reset Network
+      </button>
+    </div>
+  </header>
+
+  <!-- Notification Alert Banner -->
+  <div id="alertBanner" class="alert-box hidden">
+    <div class="alert-icon" id="alertIcon">⚠️</div>
+    <div class="alert-text">
+      <strong id="alertTitle">Emergency Alert</strong>
+      <span id="alertMessage">Simulation message details appear here.</span>
+    </div>
+    <button class="alert-dismiss" onclick="closeAlert()" aria-label="Close alert">&times;</button>
+  </div>
+
+  <!-- Main Application Workspace -->
+  <div class="app-workspace">
+    <!-- Left Sidebar: Route Controls -->
+    <aside class="sidebar sidebar-left">
+      <section class="card panel-card">
+        <div class="card-title-bar">
+          <h2 class="section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            Route Controls
+          </h2>
+        </div>
+
+        <form id="routingForm" class="controls-form" onsubmit="event.preventDefault(); calculateRoute();">
+          <!-- Origin Location Dropdown -->
+          <div class="form-field">
+            <label for="selectSource" class="field-label">Origin Location</label>
+            <div class="select-wrapper">
+              <select id="selectSource" class="form-select" required>
+                <option value="">Loading city locations...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Destination Shelter Dropdown -->
+          <div class="form-field">
+            <label for="selectDestination" class="field-label">Destination Shelter</label>
+            <div class="select-wrapper">
+              <select id="selectDestination" class="form-select" required>
+                <option value="">Loading emergency shelters...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Routing Strategy Options -->
+          <div class="form-field">
+            <label class="field-label">Routing Strategy</label>
+            <div class="segmented-control">
+              <label class="segment-option" id="labelSafest">
+                <input type="radio" name="routeStrategy" value="safest" checked onchange="updateStrategyUI()">
+                <span class="segment-title">Safest Route</span>
+              </label>
+              <label class="segment-option" id="labelShortest">
+                <input type="radio" name="routeStrategy" value="shortest" onchange="updateStrategyUI()">
+                <span class="segment-title">Shortest Route</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Safety Multiplier Slider -->
+          <div class="form-field" id="riskWeightGroup">
+            <div class="field-header-row">
+              <label for="sliderRiskWeight" class="field-label">Safety Multiplier</label>
+              <span class="multiplier-display" id="riskWeightValue">2.0x</span>
+            </div>
+            <input type="range" id="sliderRiskWeight" class="form-slider" min="0.5" max="6.0" step="0.5" value="2.0" oninput="updateRiskWeightValue(this.value)">
+            <div class="slider-scale">
+              <span>0.5x (Fast)</span>
+              <span>2.0x (Balanced)</span>
+              <span>6.0x (Max Safe)</span>
+            </div>
+            <p class="field-helper">Formula: Cost = Distance + (Hazard Penalty &times; Weight)</p>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-block" id="btnFindRoute">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+              Find Route
+            </button>
+            <button type="button" class="btn btn-outline btn-block" id="btnRunBFS" onclick="executeBFS()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              Explore Reachability (BFS)
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Algorithm Telemetry Card -->
+      <section class="card panel-card">
+        <div class="card-title-bar">
+          <h3 class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Algorithm Telemetry
+          </h3>
+          <span class="tag tag-neutral" id="badgeAlgoType">Safest Dijkstra</span>
+        </div>
+
+        <div class="spec-list">
+          <div class="spec-item">
+            <span class="spec-name">Time Complexity</span>
+            <code class="spec-code" id="specTimeComp">O((V + E) log V)</code>
+          </div>
+          <div class="spec-item">
+            <span class="spec-name">Space Complexity</span>
+            <code class="spec-code" id="specSpaceComp">O(V + E)</code>
+          </div>
+          <div class="spec-item">
+            <span class="spec-name">Sectors Visited</span>
+            <span class="spec-value" id="specVisitedNodes">-- / 17</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-name">Optimization Cost</span>
+            <span class="spec-value" id="specCompositeCost">--</span>
+          </div>
+        </div>
+
+        <div class="rationale-box">
+          <span class="rationale-heading">Optimization Rationale</span>
+          <p id="algoExplanation" class="rationale-text">
+            Engine ready. Select an origin location and emergency shelter to compute the optimal route.
+          </p>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Center: Main Focus (Map & Road Management) -->
+    <main class="main-stage">
+      <!-- Main Map Section -->
+      <section class="card map-stage-card">
+        <div class="stage-header">
+          <div>
+            <h2 class="stage-title">City Road Network Topology</h2>
+            <span class="stage-subtitle" id="mapNetworkStats">17 Sectors &bull; 26 Roads</span>
+          </div>
+          <div class="stage-toolbar">
+            <button class="btn btn-ghost btn-sm" onclick="resetMapZoom()" title="Reset viewport">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+              Reset View
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleRoadDistances()" title="Toggle distance badges">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              Labels
+            </button>
+          </div>
+        </div>
+
+        <!-- SVG Map Container -->
+        <div class="map-viewport" id="svgContainer">
+          <svg id="citySvgMap" viewBox="0 0 1000 680" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <!-- Subtle light GIS grid -->
+              <pattern id="lightGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDF2F7" stroke-width="1"/>
+              </pattern>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#F8FAFC" />
+            <rect width="100%" height="100%" fill="url(#lightGrid)" />
+
+            <!-- Edge Layers -->
+            <g id="roadsLayerBase"></g>
+            <g id="activeRouteLayer"></g>
+            <g id="roadLabelsLayer"></g>
+
+            <!-- Vertex Layer -->
+            <g id="nodesLayer"></g>
+          </svg>
+        </div>
+
+        <!-- Clean Map Legend -->
+        <div class="map-legend-bar">
+          <div class="legend-cluster">
+            <span class="legend-label">Roads:</span>
+            <span class="legend-entry"><span class="swatch swatch-normal"></span> Normal</span>
+            <span class="legend-entry"><span class="swatch swatch-medium"></span> Medium Risk</span>
+            <span class="legend-entry"><span class="swatch swatch-high"></span> High Risk</span>
+            <span class="legend-entry"><span class="swatch swatch-blocked"></span> Blocked</span>
+            <span class="legend-entry"><span class="swatch swatch-route"></span> Selected Route</span>
+          </div>
+          <div class="legend-cluster">
+            <span class="legend-label">Sectors:</span>
+            <span class="legend-entry"><span class="node-swatch node-swatch-shelter"></span> Shelter</span>
+            <span class="legend-entry"><span class="node-swatch node-swatch-hospital"></span> Hospital</span>
+            <span class="legend-entry"><span class="node-swatch node-swatch-facility"></span> City Facility</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Section: Road Management Table -->
+      <section class="card table-stage-card">
+        <div class="table-card-header">
+          <div>
+            <h3 class="stage-title">Road Management</h3>
+            <span class="stage-subtitle">Monitor and dynamically update corridor availability (<span id="roadCountBadge">26</span> total)</span>
+          </div>
+          <div class="table-actions">
+            <div class="search-input-box">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="roadSearchInput" placeholder="Filter corridors..." oninput="handleRoadSearch(this.value)">
+            </div>
+            <div class="filter-group">
+              <button class="filter-chip active" onclick="filterRoads('all', this)">All</button>
+              <button class="filter-chip" onclick="filterRoads('blocked', this)">Blocked</button>
+              <button class="filter-chip" onclick="filterRoads('High', this)">High Risk</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Road Name</th>
+                <th>Starting Location</th>
+                <th>Ending Location</th>
+                <th>Distance</th>
+                <th>Risk Level</th>
+                <th>Status</th>
+                <th class="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="roadTableBody">
+              <tr><td colspan="7" class="empty-state">Loading road network...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Right Sidebar: Route Information -->
+    <aside class="sidebar sidebar-right">
+      <!-- Route Telemetry Card -->
+      <section class="card panel-card" id="resultsCard">
+        <div class="card-title-bar">
+          <h2 class="section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            Route Information
+          </h2>
+          <span class="tag tag-neutral" id="safetyGradeBadge">Awaiting Plan</span>
+        </div>
+
+        <!-- KPI Metrics Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">TOTAL DISTANCE</span>
+            <div class="metric-val" id="kpiDistance">-- <small>km</small></div>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">EST. TRAVEL TIME</span>
+            <div class="metric-val" id="kpiTime">-- <small>min</small></div>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">HAZARD SCORE</span>
+            <div class="metric-val" id="kpiRisk">--</div>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">SECTORS VISITED</span>
+            <div class="metric-val" id="kpiHops">--</div>
+          </div>
+        </div>
+
+        <!-- Turn-by-Turn Navigation List -->
+        <div class="turn-directions-section">
+          <h4 class="sub-title">Turn-by-Turn Navigation</h4>
+          <div id="pathTimeline" class="turn-list">
+            <p class="empty-hint">Select origin and shelter to generate navigation steps.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- BFS Reachability Exploration Card -->
+      <section class="card panel-card" id="bfsCard">
+        <div class="card-title-bar">
+          <h3 class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><line x1="3" y1="12" x2="9" y2="12"></line><line x1="15" y1="12" x2="21" y2="12"></line><line x1="12" y1="3" x2="12" y2="9"></line><line x1="12" y1="15" x2="12" y2="21"></line></svg>
+            BFS Reachable Sectors
+          </h3>
+          <span class="tag tag-info" id="bfsReachableBadge">-- / 17</span>
+        </div>
+        <p class="panel-note">Level-order discovery sequence from current origin:</p>
+        <div id="bfsOrderList" class="bfs-chips-container">
+          <p class="empty-hint">Click "Explore Reachability (BFS)" to view reachable sectors.</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
