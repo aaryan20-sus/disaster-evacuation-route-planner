@@ -268,14 +268,27 @@ function renderSvgMap() {
     g.setAttribute("transform", `translate(${node.x}, ${node.y})`);
 
     // Click handler to select node as origin or destination
-    g.onclick = () => handleNodeClick(node.id);
+    g.onclick = (e) => {
+      e.stopPropagation();
+      handleNodeClick(node.id);
+    };
+
+    // Generous transparent hit target for reliable mouse/touch tapping
+    const hitTarget = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    hitTarget.setAttribute("r", 24);
+    hitTarget.setAttribute("class", "node-hit-target");
+    g.appendChild(hitTarget);
+
+    // Inner icon wrapper so hover/BFS scaling happens at (0,0) without overriding translate(x,y)
+    const iconWrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    iconWrap.setAttribute("class", "node-icon-wrap");
 
     // Shelter outer indicator ring
     if (node.is_shelter) {
       const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       ring.setAttribute("r", 25);
       ring.setAttribute("class", "node-shelter-ring");
-      g.appendChild(ring);
+      iconWrap.appendChild(ring);
     }
 
     // Node Circle (Clean light fill with crisp colored border)
@@ -297,15 +310,16 @@ function renderSvgMap() {
       circle.setAttribute("stroke", "#2563EB");
       circle.setAttribute("stroke-width", "2");
     }
-    g.appendChild(circle);
+    iconWrap.appendChild(circle);
 
-    // Inner Glyph / Symbol
+    // Inner Glyph / Symbol (non-blocking for pointer events)
     const glyph = document.createElementNS("http://www.w3.org/2000/svg", "text");
     glyph.setAttribute("text-anchor", "middle");
     glyph.setAttribute("dominant-baseline", "central");
     glyph.setAttribute("font-size", node.is_shelter ? "12px" : "10px");
     glyph.setAttribute("fill", "#202B3C");
     glyph.setAttribute("font-weight", "600");
+    glyph.setAttribute("pointer-events", "none");
 
     if (node.is_shelter) glyph.textContent = "🛡️";
     else if (node.type === "hospital") glyph.textContent = "🏥";
@@ -318,7 +332,8 @@ function renderSvgMap() {
     else if (node.type === "industrial") glyph.textContent = "🏭";
     else glyph.textContent = "🏠";
 
-    g.appendChild(glyph);
+    iconWrap.appendChild(glyph);
+    g.appendChild(iconWrap);
 
     // Clean Readable Label Pill
     const labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -344,7 +359,7 @@ function renderSvgMap() {
 
     // Tooltip
     const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "title");
-    titleEl.textContent = `${node.name} (${node.code})\n${node.description}\nCapacity: ${node.capacity} people\nClick to set as Origin or Shelter`;
+    titleEl.textContent = `${node.name} (${node.code})\n${node.description}\nCapacity: ${node.capacity} people\nClick to set as ${node.is_shelter ? "Destination Shelter" : "Origin Location"}`;
     g.appendChild(titleEl);
 
     nodesLayer.appendChild(g);
@@ -360,19 +375,29 @@ function renderSvgMap() {
  * Handle clicking on a node directly in SVG canvas
  */
 function handleNodeClick(nodeId) {
-  const currentSrc = selectSource.value;
-  const currentDst = selectDestination.value;
+  const clickedNode = locationMap.get(nodeId);
+  const idStr = String(nodeId);
 
-  if (!currentSrc || (currentSrc && currentDst && currentSrc !== String(nodeId) && currentDst !== String(nodeId))) {
-    selectSource.value = String(nodeId);
-  } else if (!currentDst || currentSrc === String(nodeId)) {
-    selectDestination.value = String(nodeId);
+  if (clickedNode && clickedNode.is_shelter) {
+    // Tapping a Shelter sets it as Destination (unless Origin is empty)
+    if (!selectSource.value) {
+      selectSource.value = idStr;
+    } else if (selectSource.value !== idStr) {
+      selectDestination.value = idStr;
+    }
   } else {
-    selectSource.value = String(nodeId);
+    // Tapping a city location sets it as Origin (unless Destination is empty)
+    if (!selectDestination.value) {
+      selectDestination.value = idStr;
+    } else if (selectDestination.value !== idStr) {
+      selectSource.value = idStr;
+    }
   }
 
   highlightSelectedNodes();
-  calculateRoute();
+  if (selectSource.value && selectDestination.value) {
+    calculateRoute();
+  }
 }
 
 /**
@@ -589,11 +614,10 @@ function animateBFSTraversal(nodeIds) {
     setTimeout(() => {
       const g = document.getElementById(`svg-node-${nid}`);
       if (g) {
-        g.style.transition = "transform 0.2s ease";
-        g.style.transform = "scale(1.15)";
+        g.classList.add("node-bfs-active");
         setTimeout(() => {
-          g.style.transform = "scale(1.0)";
-        }, 250);
+          g.classList.remove("node-bfs-active");
+        }, 320);
       }
     }, i * 120);
   });
