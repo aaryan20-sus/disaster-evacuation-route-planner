@@ -7,22 +7,32 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("evac-theme");
+        var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var theme = saved === "dark" || saved === "light" ? saved : (prefersDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <!-- Top Navigation Header -->
   <header class="top-nav">
     <div class="nav-left">
-      <div class="app-logo">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-          <path d="M2 17l10 5 10-5"></path>
-          <path d="M2 12l10 5 10-5"></path>
+      <div class="app-logo" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6" cy="19" r="3"></circle>
+          <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path>
+          <circle cx="18" cy="5" r="3"></circle>
         </svg>
       </div>
       <div class="app-titles">
         <h1 class="project-title">Emergency Route Planner</h1>
-        <span class="project-subtitle">Dynamic Evacuation Management</span>
+        <span class="project-subtitle">Evacuation Network &amp; Hazard Routing</span>
       </div>
     </div>
 
@@ -31,21 +41,38 @@
         <span class="status-indicator-dot"></span>
         <span class="status-label">C++ Engine: Connected</span>
       </div>
+      <button class="btn btn-secondary btn-compact theme-toggle-btn" id="btnThemeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" title="Toggle light/dark theme">
+        <svg class="theme-icon theme-icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg class="theme-icon theme-icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <span class="theme-toggle-label" id="themeToggleLabel">Dark</span>
+      </button>
       <button class="btn btn-secondary btn-compact" id="btnQuickReset" title="Restore baseline network conditions">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
           <path d="M3 3v5h5"></path>
         </svg>
-        Reset Network
+        Reset
       </button>
     </div>
   </header>
 
   <!-- Notification Alert Banner -->
-  <div id="alertBanner" class="alert-box hidden">
-    <div class="alert-icon" id="alertIcon">⚠️</div>
+  <div id="alertBanner" class="alert-box hidden" role="status">
+    <div class="alert-icon" id="alertIcon" aria-hidden="true"></div>
     <div class="alert-text">
-      <strong id="alertTitle">Emergency Alert</strong>
+      <strong id="alertTitle">Status</strong>
       <span id="alertMessage">Simulation message details appear here.</span>
     </div>
     <button class="alert-dismiss" onclick="closeAlert()" aria-label="Close alert">&times;</button>
@@ -57,10 +84,7 @@
     <aside class="sidebar sidebar-left">
       <section class="card panel-card">
         <div class="card-title-bar">
-          <h2 class="section-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-            Route Controls
-          </h2>
+          <h2 class="section-title">Route Controls</h2>
         </div>
 
         <form id="routingForm" class="controls-form" onsubmit="event.preventDefault(); calculateRoute();">
@@ -88,7 +112,7 @@
           <div class="form-field">
             <label class="field-label">Routing Strategy</label>
             <div class="segmented-control">
-              <label class="segment-option" id="labelSafest">
+              <label class="segment-option active" id="labelSafest">
                 <input type="radio" name="routeStrategy" value="safest" checked onchange="updateStrategyUI()">
                 <span class="segment-title">Safest Route</span>
               </label>
@@ -102,26 +126,24 @@
           <!-- Safety Multiplier Slider -->
           <div class="form-field" id="riskWeightGroup">
             <div class="field-header-row">
-              <label for="sliderRiskWeight" class="field-label">Safety Multiplier</label>
+              <label for="sliderRiskWeight" class="field-label">Hazard Weight</label>
               <span class="multiplier-display" id="riskWeightValue">2.0x</span>
             </div>
             <input type="range" id="sliderRiskWeight" class="form-slider" min="0.5" max="6.0" step="0.5" value="2.0" oninput="updateRiskWeightValue(this.value)">
             <div class="slider-scale">
-              <span>0.5x (Fast)</span>
-              <span>2.0x (Balanced)</span>
-              <span>6.0x (Max Safe)</span>
+              <span>0.5x Speed</span>
+              <span>2.0x Balanced</span>
+              <span>6.0x Caution</span>
             </div>
-            <p class="field-helper">Formula: Cost = Distance + (Hazard Penalty &times; Weight)</p>
+            <p class="field-helper">Cost = distance + (hazard &times; weight)</p>
           </div>
 
           <!-- Action Buttons -->
           <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-block" id="btnFindRoute">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
               Find Route
             </button>
             <button type="button" class="btn btn-outline btn-block" id="btnRunBFS" onclick="executeBFS()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
               Explore Reachability (BFS)
             </button>
           </div>
@@ -131,36 +153,33 @@
       <!-- Algorithm Telemetry Card -->
       <section class="card panel-card">
         <div class="card-title-bar">
-          <h3 class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-            Algorithm Telemetry
-          </h3>
+          <h3 class="section-title">Solver Telemetry</h3>
           <span class="tag tag-neutral" id="badgeAlgoType">Safest Dijkstra</span>
         </div>
 
         <div class="spec-list">
           <div class="spec-item">
-            <span class="spec-name">Time Complexity</span>
+            <span class="spec-name">Time</span>
             <code class="spec-code" id="specTimeComp">O((V + E) log V)</code>
           </div>
           <div class="spec-item">
-            <span class="spec-name">Space Complexity</span>
+            <span class="spec-name">Space</span>
             <code class="spec-code" id="specSpaceComp">O(V + E)</code>
           </div>
           <div class="spec-item">
-            <span class="spec-name">Sectors Visited</span>
+            <span class="spec-name">Explored</span>
             <span class="spec-value" id="specVisitedNodes">-- / 17</span>
           </div>
           <div class="spec-item">
-            <span class="spec-name">Optimization Cost</span>
+            <span class="spec-name">Composite Cost</span>
             <span class="spec-value" id="specCompositeCost">--</span>
           </div>
         </div>
 
         <div class="rationale-box">
-          <span class="rationale-heading">Optimization Rationale</span>
+          <span class="rationale-heading">Solver Summary</span>
           <p id="algoExplanation" class="rationale-text">
-            Engine ready. Select an origin location and emergency shelter to compute the optimal route.
+            Select an origin sector and destination shelter to compute the optimal corridor.
           </p>
         </div>
       </section>
@@ -171,18 +190,16 @@
       <!-- Main Map Section -->
       <section class="card map-stage-card">
         <div class="stage-header">
-          <div>
-            <h2 class="stage-title">City Road Network Topology</h2>
-            <span class="stage-subtitle" id="mapNetworkStats">17 Sectors &bull; 26 Roads</span>
+          <div class="stage-title-group">
+            <h2 class="stage-title">City Road Network</h2>
+            <span class="stage-subtitle" id="mapNetworkStats">17 Sectors &middot; 26 Roads</span>
           </div>
           <div class="stage-toolbar">
-            <button class="btn btn-ghost btn-sm" onclick="resetMapZoom()" title="Reset viewport">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            <button class="btn btn-secondary btn-sm" onclick="resetMapZoom()" title="Reset viewport">
               Reset View
             </button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleRoadDistances()" title="Toggle distance badges">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-              Labels
+            <button class="btn btn-secondary btn-sm is-active" id="btnToggleLabels" onclick="toggleRoadDistances()" title="Toggle distance badges">
+              Distance Labels
             </button>
           </div>
         </div>
@@ -193,18 +210,18 @@
             <defs>
               <!-- Subtle light GIS grid -->
               <pattern id="lightGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDF2F7" stroke-width="1"/>
+                <path class="map-grid-line" d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDF2F7" stroke-width="1"/>
               </pattern>
             </defs>
 
             <!-- Background -->
-            <rect width="100%" height="100%" fill="#F8FAFC" />
+            <rect class="map-bg-rect" width="100%" height="100%" fill="#F8FAFC" />
             <rect width="100%" height="100%" fill="url(#lightGrid)" />
 
             <!-- Simulated GIS City Layout Backdrop (non-interactive) -->
             <g id="mapBackdropLayer" pointer-events="none">
               <!-- Urban District / City Block Patches -->
-              <g fill="#EEF2F6" stroke="#E2E8F0" stroke-width="1">
+              <g class="map-district-blocks" fill="#EEF2F6" stroke="#E2E8F0" stroke-width="1">
                 <!-- Civic & Hospital Blocks (NW) -->
                 <rect x="85" y="75" width="145" height="95" rx="6" />
                 <rect x="295" y="70" width="130" height="85" rx="6" />
@@ -228,28 +245,28 @@
               </g>
 
               <!-- Industrial Zone (East) -->
-              <g>
-                <rect x="770" y="200" width="150" height="120" rx="8" fill="#E8ECF2" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4,3" />
-                <rect x="795" y="218" width="38" height="22" rx="2" fill="#DCE2EC" />
-                <rect x="845" y="218" width="52" height="22" rx="2" fill="#DCE2EC" />
-                <rect x="800" y="280" width="60" height="24" rx="2" fill="#DCE2EC" />
+              <g class="map-industrial-zone">
+                <rect class="map-industrial-bg" x="770" y="200" width="150" height="120" rx="8" fill="#E8ECF2" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4,3" />
+                <rect class="map-industrial-building" x="795" y="218" width="38" height="22" rx="2" fill="#DCE2EC" />
+                <rect class="map-industrial-building" x="845" y="218" width="52" height="22" rx="2" fill="#DCE2EC" />
+                <rect class="map-industrial-building" x="800" y="280" width="60" height="24" rx="2" fill="#DCE2EC" />
               </g>
 
               <!-- Central Park Green Zone -->
-              <g>
-                <path d="M 355,235 Q 420,210 485,235 Q 505,280 480,325 Q 420,348 355,322 Q 335,280 355,235 Z" fill="#E6F4EA" stroke="#BBF7D0" stroke-width="1.5" />
-                <path d="M 370,275 Q 420,255 470,285" fill="none" stroke="#CBEAD4" stroke-width="2" stroke-dasharray="3,3" />
-                <circle cx="385" cy="255" r="7" fill="#CBEAD4" />
-                <circle cx="455" cy="258" r="8" fill="#CBEAD4" />
-                <circle cx="452" cy="308" r="6" fill="#CBEAD4" />
-                <circle cx="382" cy="302" r="6" fill="#CBEAD4" />
+              <g class="map-park-zone">
+                <path class="map-park-patch" d="M 355,235 Q 420,210 485,235 Q 505,280 480,325 Q 420,348 355,322 Q 335,280 355,235 Z" fill="#E6F4EA" stroke="#BBF7D0" stroke-width="1.5" />
+                <path class="map-park-trail" d="M 370,275 Q 420,255 470,285" fill="none" stroke="#CBEAD4" stroke-width="2" stroke-dasharray="3,3" />
+                <circle class="map-park-tree" cx="385" cy="255" r="7" fill="#CBEAD4" />
+                <circle class="map-park-tree" cx="455" cy="258" r="8" fill="#CBEAD4" />
+                <circle class="map-park-tree" cx="452" cy="308" r="6" fill="#CBEAD4" />
+                <circle class="map-park-tree" cx="382" cy="302" r="6" fill="#CBEAD4" />
               </g>
 
               <!-- West Shelter Park Buffer -->
-              <path d="M 45,490 Q 95,475 140,515 Q 145,575 95,595 Q 45,585 45,490 Z" fill="#ECFDF5" stroke="#D1FAE5" stroke-width="1.2" />
+              <path class="map-shelter-park" d="M 45,490 Q 95,475 140,515 Q 145,575 95,595 Q 45,585 45,490 Z" fill="#ECFDF5" stroke="#D1FAE5" stroke-width="1.2" />
 
               <!-- Secondary Local Street Grid (Subtle background avenues) -->
-              <g stroke="#E2E8F0" stroke-width="1.2" fill="none">
+              <g class="map-secondary-streets" stroke="#E2E8F0" stroke-width="1.2" fill="none">
                 <line x1="0" y1="95" x2="1000" y2="95" />
                 <line x1="0" y1="200" x2="1000" y2="200" />
                 <line x1="0" y1="355" x2="1000" y2="355" />
@@ -264,43 +281,43 @@
               </g>
 
               <!-- West Harbor Waterfront -->
-              <path d="M 0,385 Q 38,445 28,540 Q 20,615 48,680 L 0,680 Z" fill="#DBEAFE" stroke="#BFDBFE" stroke-width="1.5" />
+              <path class="map-water-harbor" d="M 0,385 Q 38,445 28,540 Q 20,615 48,680 L 0,680 Z" fill="#DBEAFE" stroke="#BFDBFE" stroke-width="1.5" />
 
               <!-- Metro River (Crosses under River Bridge & beside Central Alley Flood Zone) -->
-              <path d="M 255,0 C 265,95 275,175 305,218 C 345,270 435,295 478,338 C 510,370 570,400 585,470 C 600,545 585,620 600,680"
+              <path class="map-river-bank" d="M 255,0 C 265,95 275,175 305,218 C 345,270 435,295 478,338 C 510,370 570,400 585,470 C 600,545 585,620 600,680"
                     fill="none" stroke="#BFDBFE" stroke-width="24" stroke-linecap="round" />
-              <path d="M 255,0 C 265,95 275,175 305,218 C 345,270 435,295 478,338 C 510,370 570,400 585,470 C 600,545 585,620 600,680"
+              <path class="map-river-water" d="M 255,0 C 265,95 275,175 305,218 C 345,270 435,295 478,338 C 510,370 570,400 585,470 C 600,545 585,620 600,680"
                     fill="none" stroke="#DBEAFE" stroke-width="18" stroke-linecap="round" />
 
               <!-- Metro Rail Corridor (Passes through Railway Station 160,320) -->
-              <path d="M 0,280 Q 110,305 160,320 T 215,680" fill="none" stroke="#CBD5E1" stroke-width="3" />
-              <path d="M 0,280 Q 110,305 160,320 T 215,680" fill="none" stroke="#F8FAFC" stroke-width="1.5" stroke-dasharray="5,5" />
+              <path class="map-rail-bed" d="M 0,280 Q 110,305 160,320 T 215,680" fill="none" stroke="#CBD5E1" stroke-width="3" />
+              <path class="map-rail-dash" d="M 0,280 Q 110,305 160,320 T 215,680" fill="none" stroke="#F8FAFC" stroke-width="1.5" stroke-dasharray="5,5" />
 
               <!-- District Watermark Labels -->
-              <g fill="#94A3B8" font-family="Inter, sans-serif" font-size="9" font-weight="600" letter-spacing="1.6" opacity="0.85">
+              <g class="map-watermarks" fill="#94A3B8" font-family="Inter, sans-serif" font-size="9" font-weight="600" letter-spacing="1.6" opacity="0.85">
                 <text x="155" y="60" text-anchor="middle">CIVIC &amp; MEDICAL</text>
                 <text x="720" y="55" text-anchor="middle">NORTH RESIDENTIAL</text>
-                <text x="420" y="218" text-anchor="middle" fill="#15803D" opacity="0.7">CENTRAL PARK</text>
+                <text class="map-watermark-park" x="420" y="218" text-anchor="middle" fill="#15803D" opacity="0.7">CENTRAL PARK</text>
                 <text x="845" y="192" text-anchor="middle">INDUSTRIAL ZONE</text>
                 <text x="680" y="615" text-anchor="middle">SOUTH SUBURBS</text>
-                <text x="530" y="410" text-anchor="middle" fill="#3B82F6" opacity="0.7" transform="rotate(42 530 410)">METRO RIVER</text>
+                <text class="map-watermark-river" x="530" y="410" text-anchor="middle" fill="#3B82F6" opacity="0.7" transform="rotate(42 530 410)">METRO RIVER</text>
               </g>
 
               <!-- Minimalist GIS Compass Rose (Top-Left) -->
-              <g transform="translate(38, 38)" opacity="0.85">
-                <circle cx="0" cy="0" r="16" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2" />
+              <g class="map-compass" transform="translate(38, 38)" opacity="0.85">
+                <circle class="map-compass-bg" cx="0" cy="0" r="16" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2" />
                 <polygon points="0,-11 3.5,2 0,-1 -3.5,2" fill="#2563EB" />
-                <polygon points="0,11 3.5,-2 0,1 -3.5,-2" fill="#CBD5E1" />
-                <text x="0" y="-19" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="700" fill="#64748B">N</text>
+                <polygon class="map-compass-south" points="0,11 3.5,-2 0,1 -3.5,-2" fill="#CBD5E1" />
+                <text class="map-compass-text" x="0" y="-19" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="700" fill="#64748B">N</text>
               </g>
 
               <!-- Minimalist GIS Scale Bar (Bottom-Right) -->
-              <g transform="translate(880, 650)" opacity="0.9">
-                <rect x="-8" y="-14" width="106" height="24" rx="4" fill="#FFFFFF" fill-opacity="0.9" stroke="#E2E8F0" stroke-width="1" />
-                <path d="M 0,0 L 0,4 L 45,4 L 45,0 M 45,4 L 90,4 L 90,0" fill="none" stroke="#64748B" stroke-width="1.5" />
-                <text x="0" y="-4" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#64748B">0</text>
-                <text x="45" y="-4" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#64748B">1.5</text>
-                <text x="90" y="-4" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#64748B">3 km</text>
+              <g class="map-scale-bar" transform="translate(880, 650)" opacity="0.9">
+                <rect class="map-scale-bg" x="-8" y="-14" width="106" height="24" rx="4" fill="#FFFFFF" fill-opacity="0.9" stroke="#E2E8F0" stroke-width="1" />
+                <path class="map-scale-ticks" d="M 0,0 L 0,4 L 45,4 L 45,0 M 45,4 L 90,4 L 90,0" fill="none" stroke="#64748B" stroke-width="1.5" />
+                <text class="map-scale-text" x="0" y="-4" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#64748B">0</text>
+                <text class="map-scale-text" x="45" y="-4" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#64748B">1.5</text>
+                <text class="map-scale-text" x="90" y="-4" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="600" fill="#64748B">3 km</text>
               </g>
             </g>
 
@@ -317,7 +334,7 @@
         <!-- Clean Map Legend -->
         <div class="map-legend-bar">
           <div class="legend-cluster">
-            <span class="legend-label">Roads:</span>
+            <span class="legend-label">Corridors</span>
             <span class="legend-entry"><span class="swatch swatch-normal"></span> Normal</span>
             <span class="legend-entry"><span class="swatch swatch-medium"></span> Medium Risk</span>
             <span class="legend-entry"><span class="swatch swatch-high"></span> High Risk</span>
@@ -325,10 +342,11 @@
             <span class="legend-entry"><span class="swatch swatch-route"></span> Selected Route</span>
           </div>
           <div class="legend-cluster">
-            <span class="legend-label">Sectors:</span>
+            <span class="legend-label">Nodes</span>
+            <span class="legend-entry"><span class="node-swatch node-swatch-origin"></span> Origin</span>
             <span class="legend-entry"><span class="node-swatch node-swatch-shelter"></span> Shelter</span>
             <span class="legend-entry"><span class="node-swatch node-swatch-hospital"></span> Hospital</span>
-            <span class="legend-entry"><span class="node-swatch node-swatch-facility"></span> City Facility</span>
+            <span class="legend-entry"><span class="node-swatch node-swatch-facility"></span> Sector</span>
           </div>
         </div>
       </section>
@@ -336,14 +354,14 @@
       <!-- Bottom Section: Road Management Table -->
       <section class="card table-stage-card">
         <div class="table-card-header">
-          <div>
+          <div class="stage-title-group">
             <h3 class="stage-title">Road Management</h3>
-            <span class="stage-subtitle">Monitor and dynamically update corridor availability (<span id="roadCountBadge">26</span> total)</span>
+            <span class="stage-subtitle"><span id="roadCountBadge">26</span> corridors</span>
           </div>
           <div class="table-actions">
             <div class="search-input-box">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" id="roadSearchInput" placeholder="Filter corridors..." oninput="handleRoadSearch(this.value)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="roadSearchInput" placeholder="Search roads or sectors..." oninput="handleRoadSearch(this.value)">
             </div>
             <div class="filter-group">
               <button class="filter-chip active" onclick="filterRoads('all', this)">All</button>
@@ -360,7 +378,7 @@
                 <th>Road Name</th>
                 <th>Starting Location</th>
                 <th>Ending Location</th>
-                <th>Distance</th>
+                <th class="text-right">Distance</th>
                 <th>Risk Level</th>
                 <th>Status</th>
                 <th class="text-right">Action</th>
@@ -379,29 +397,26 @@
       <!-- Route Telemetry Card -->
       <section class="card panel-card" id="resultsCard">
         <div class="card-title-bar">
-          <h2 class="section-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-            Route Information
-          </h2>
+          <h2 class="section-title">Route Information</h2>
           <span class="tag tag-neutral" id="safetyGradeBadge">Awaiting Plan</span>
         </div>
 
         <!-- KPI Metrics Grid -->
         <div class="metrics-grid">
           <div class="metric-card">
-            <span class="metric-label">TOTAL DISTANCE</span>
+            <span class="metric-label">Total distance</span>
             <div class="metric-val" id="kpiDistance">-- <small>km</small></div>
           </div>
           <div class="metric-card">
-            <span class="metric-label">EST. TRAVEL TIME</span>
+            <span class="metric-label">Est. travel time</span>
             <div class="metric-val" id="kpiTime">-- <small>min</small></div>
           </div>
           <div class="metric-card">
-            <span class="metric-label">HAZARD SCORE</span>
+            <span class="metric-label">Hazard score</span>
             <div class="metric-val" id="kpiRisk">--</div>
           </div>
           <div class="metric-card">
-            <span class="metric-label">SECTORS VISITED</span>
+            <span class="metric-label">Sectors visited</span>
             <div class="metric-val" id="kpiHops">--</div>
           </div>
         </div>
@@ -410,7 +425,7 @@
         <div class="turn-directions-section">
           <h4 class="sub-title">Turn-by-Turn Navigation</h4>
           <div id="pathTimeline" class="turn-list">
-            <p class="empty-hint">Select origin and shelter to generate navigation steps.</p>
+            <p class="empty-hint">Select an origin and shelter to generate directions.</p>
           </div>
         </div>
       </section>
@@ -418,15 +433,12 @@
       <!-- BFS Reachability Exploration Card -->
       <section class="card panel-card" id="bfsCard">
         <div class="card-title-bar">
-          <h3 class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><line x1="3" y1="12" x2="9" y2="12"></line><line x1="15" y1="12" x2="21" y2="12"></line><line x1="12" y1="3" x2="12" y2="9"></line><line x1="12" y1="15" x2="12" y2="21"></line></svg>
-            BFS Reachable Sectors
-          </h3>
+          <h3 class="section-title">Reachability (BFS)</h3>
           <span class="tag tag-info" id="bfsReachableBadge">-- / 17</span>
         </div>
-        <p class="panel-note">Level-order discovery sequence from current origin:</p>
+        <p class="panel-note">Traversal order from active origin:</p>
         <div id="bfsOrderList" class="bfs-chips-container">
-          <p class="empty-hint">Click "Explore Reachability (BFS)" to view reachable sectors.</p>
+          <p class="empty-hint">Run Explore Reachability to inspect accessible sectors.</p>
         </div>
       </section>
     </aside>

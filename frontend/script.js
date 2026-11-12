@@ -51,9 +51,41 @@ const nodesLayer = document.getElementById("nodesLayer");
 
 // Initialize on page load
 window.addEventListener("DOMContentLoaded", () => {
+  initThemeToggle();
   initNetwork();
   document.getElementById("btnQuickReset").addEventListener("click", resetNetwork);
 });
+
+/**
+ * Theme Toggle Controller (Light / Dark Mode with localStorage persistence)
+ */
+function initThemeToggle() {
+  const toggleBtn = document.getElementById("btnThemeToggle");
+  const toggleLabel = document.getElementById("themeToggleLabel");
+  if (!toggleBtn) return;
+
+  const syncThemeUI = (theme) => {
+    const isDark = theme === "dark";
+    document.documentElement.setAttribute("data-theme", theme);
+    toggleBtn.setAttribute("aria-pressed", String(isDark));
+    toggleBtn.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+    if (toggleLabel) {
+      toggleLabel.textContent = isDark ? "Light" : "Dark";
+    }
+  };
+
+  const currentTheme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  syncThemeUI(currentTheme);
+
+  toggleBtn.addEventListener("click", () => {
+    const isCurrentlyDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const nextTheme = isCurrentlyDark ? "light" : "dark";
+    syncThemeUI(nextTheme);
+    try {
+      localStorage.setItem("evac-theme", nextTheme);
+    } catch (e) {}
+  });
+}
 
 /**
  * Ingest City Network data from C++ Backend API
@@ -230,29 +262,22 @@ function renderSvgMap() {
       const midY = (uNode.y + vNode.y) / 2;
 
       const badgeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      badgeGroup.setAttribute("class", "road-label-badge");
+      badgeGroup.setAttribute("class", road.is_blocked ? "road-label-badge is-blocked" : "road-label-badge");
       badgeGroup.onclick = (e) => { e.stopPropagation(); toggleRoadBlock(road.id); };
 
+      const badgeW = road.is_blocked ? 44 : 30;
       const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      rect.setAttribute("x", midX - 16);
-      rect.setAttribute("y", midY - 9);
-      rect.setAttribute("width", 32);
-      rect.setAttribute("height", 18);
+      rect.setAttribute("x", midX - badgeW / 2);
+      rect.setAttribute("y", midY - 8.5);
+      rect.setAttribute("width", badgeW);
+      rect.setAttribute("height", 17);
       rect.setAttribute("class", "road-label-rect");
-
-      if (road.is_blocked) {
-        rect.style.stroke = "#FCA5A5";
-        rect.style.fill = "#FEF2F2";
-      }
 
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.setAttribute("x", midX);
       text.setAttribute("y", midY);
       text.setAttribute("class", "road-label-text");
-      text.textContent = road.is_blocked ? "⛔" : `${road.distance_km}k`;
-      if (road.is_blocked) {
-        text.style.fill = "#DC4545";
-      }
+      text.textContent = road.is_blocked ? "CLOSED" : `${road.distance_km}k`;
 
       badgeGroup.appendChild(rect);
       badgeGroup.appendChild(text);
@@ -263,7 +288,14 @@ function renderSvgMap() {
   // 2. Render Nodes (Vertices)
   cityLocations.forEach(node => {
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.setAttribute("class", "svg-node-group");
+    const roleClass = node.is_shelter
+      ? "node-role-shelter"
+      : node.type === "hospital"
+        ? "node-role-hospital"
+        : (node.type === "fire_station" || node.type === "police")
+          ? "node-role-emergency"
+          : "node-role-default";
+    g.setAttribute("class", `svg-node-group ${roleClass}`);
     g.id = `svg-node-${node.id}`;
     g.setAttribute("transform", `translate(${node.x}, ${node.y})`);
 
@@ -286,76 +318,30 @@ function renderSvgMap() {
     // Shelter outer indicator ring
     if (node.is_shelter) {
       const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      ring.setAttribute("r", 25);
+      ring.setAttribute("r", 23);
       ring.setAttribute("class", "node-shelter-ring");
       iconWrap.appendChild(ring);
     }
 
-    // Node Circle (Clean light fill with crisp colored border)
+    // Node Circle (Crisp vector marker styled via role classes)
     const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    const radius = node.is_shelter ? 19 : 15;
+    const radius = node.is_shelter ? 17 : 14;
     circle.setAttribute("r", radius);
     circle.setAttribute("class", "node-circle-outer");
-
-    if (node.is_shelter) {
-      circle.setAttribute("stroke", "#16A36A");
-      circle.setAttribute("stroke-width", "3");
-    } else if (node.type === "hospital") {
-      circle.setAttribute("stroke", "#DC4545");
-      circle.setAttribute("stroke-width", "3");
-    } else if (node.type === "fire_station" || node.type === "police") {
-      circle.setAttribute("stroke", "#E9A23B");
-      circle.setAttribute("stroke-width", "2.5");
-    } else {
-      circle.setAttribute("stroke", "#2563EB");
-      circle.setAttribute("stroke-width", "2");
-    }
     iconWrap.appendChild(circle);
 
-    // Inner Glyph / Symbol (non-blocking for pointer events)
-    const glyph = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    glyph.setAttribute("text-anchor", "middle");
-    glyph.setAttribute("dominant-baseline", "central");
-    glyph.setAttribute("font-size", node.is_shelter ? "12px" : "10px");
-    glyph.setAttribute("fill", "#202B3C");
-    glyph.setAttribute("font-weight", "600");
-    glyph.setAttribute("pointer-events", "none");
-
-    if (node.is_shelter) glyph.textContent = "🛡️";
-    else if (node.type === "hospital") glyph.textContent = "🏥";
-    else if (node.type === "fire_station") glyph.textContent = "🚒";
-    else if (node.type === "police") glyph.textContent = "👮";
-    else if (node.type === "station") glyph.textContent = "🚆";
-    else if (node.type === "school") glyph.textContent = "🏫";
-    else if (node.type === "park") glyph.textContent = "🌲";
-    else if (node.type === "commercial") glyph.textContent = "🏬";
-    else if (node.type === "industrial") glyph.textContent = "🏭";
-    else glyph.textContent = "🏠";
-
-    iconWrap.appendChild(glyph);
+    // Crisp monochrome SVG vector icon (non-blocking for pointer events)
+    iconWrap.appendChild(createNodeVectorIcon(node));
     g.appendChild(iconWrap);
 
-    // Clean Readable Label Pill
-    const labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    const labelY = radius + 13;
-
-    const textWidth = node.name.length * 6.2 + 10;
-    const labelBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    labelBg.setAttribute("x", -textWidth / 2);
-    labelBg.setAttribute("y", labelY - 8);
-    labelBg.setAttribute("width", textWidth);
-    labelBg.setAttribute("height", 16);
-    labelBg.setAttribute("class", "node-label-bg");
-
+    // Cartographic Haloed Label
+    const labelY = radius + 12;
     const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     labelText.setAttribute("x", 0);
     labelText.setAttribute("y", labelY);
     labelText.setAttribute("class", "node-label-text");
     labelText.textContent = node.name;
-
-    labelGroup.appendChild(labelBg);
-    labelGroup.appendChild(labelText);
-    g.appendChild(labelGroup);
+    g.appendChild(labelText);
 
     // Tooltip
     const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "title");
@@ -369,6 +355,55 @@ function renderSvgMap() {
   if (activeRouteData && activeRouteData.success) {
     drawActiveRoute(activeRouteData);
   }
+}
+
+/**
+ * Create a crisp vector icon inside a centered 16x16 (-8..8) SVG group
+ */
+function createNodeVectorIcon(node) {
+  const svgNS = "http://www.w3.org/2000/svg";
+  const iconGroup = document.createElementNS(svgNS, "g");
+  iconGroup.setAttribute("class", "node-glyph");
+  iconGroup.setAttribute("pointer-events", "none");
+
+  const svg = document.createElementNS(svgNS, "svg");
+  const size = node.is_shelter ? 16 : 14;
+  svg.setAttribute("x", -size / 2);
+  svg.setAttribute("y", -size / 2);
+  svg.setAttribute("width", size);
+  svg.setAttribute("height", size);
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2.1");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+
+  let markup = "";
+  if (node.is_shelter) {
+    markup = '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>';
+  } else if (node.type === "hospital") {
+    markup = '<path d="M12 5v14M5 12h14"/>';
+  } else if (node.type === "fire_station") {
+    markup = '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>';
+  } else if (node.type === "police") {
+    markup = '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>';
+  } else if (node.type === "station") {
+    markup = '<rect x="4" y="3" width="16" height="14" rx="2"/><path d="M4 11h16M12 3v8M8 19l-2 3M16 19l2 3"/>';
+  } else if (node.type === "school") {
+    markup = '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>';
+  } else if (node.type === "park") {
+    markup = '<path d="M12 3l6 8h-3.5L19 18H5l4.5-7H6l6-8z"/><path d="M12 18v4"/>';
+  } else if (node.type === "commercial") {
+    markup = '<path d="M3 9l2-4h14l2 4v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M3 9h18M9 21V9"/>';
+  } else if (node.type === "industrial") {
+    markup = '<path d="M2 20h20V9l-5 3V9l-5 3V4H2v16z"/>';
+  } else {
+    markup = '<path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9.5z"/>';
+  }
+  svg.innerHTML = markup;
+  iconGroup.appendChild(svg);
+  return iconGroup;
 }
 
 /**
@@ -478,6 +513,21 @@ function drawActiveRoute(routeData) {
   activeRouteLayer.innerHTML = "";
   if (!routeData || !routeData.steps) return;
 
+  // Outer casing pass for crisp separation over intersecting corridors
+  routeData.steps.forEach(step => {
+    const uNode = locationMap.get(step.from_id);
+    const vNode = locationMap.get(step.to_id);
+    if (!uNode || !vNode) return;
+
+    const casing = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    casing.setAttribute("x1", uNode.x);
+    casing.setAttribute("y1", uNode.y);
+    casing.setAttribute("x2", vNode.x);
+    casing.setAttribute("y2", vNode.y);
+    casing.setAttribute("class", "svg-road-active-casing");
+    activeRouteLayer.appendChild(casing);
+  });
+
   routeData.steps.forEach(step => {
     const uNode = locationMap.get(step.from_id);
     const vNode = locationMap.get(step.to_id);
@@ -554,16 +604,16 @@ function displayNoRouteTelemetry(data) {
   kpiRisk.innerText = "--";
   kpiHops.innerText = "--";
 
-  safetyGradeBadge.innerText = "NO PATH AVAILABLE";
+  safetyGradeBadge.innerText = "No Route";
   safetyGradeBadge.className = "tag tag-danger";
 
   specVisitedNodes.innerText = `${data.nodes_visited_count || 0} / ${cityLocations.length}`;
-  specCompositeCost.innerText = "INFINITY";
+  specCompositeCost.innerText = "∞";
   algoExplanation.innerText = data.algorithm_explanation || data.message;
 
   pathTimeline.innerHTML = `
-    <div style="padding: 0.85rem; color: #DC4545; text-align: center; font-size: 0.78rem; font-weight: 600;">
-      ⛔ All corridors to the selected shelter are currently severed by disaster blockages. Please designate an alternate emergency shelter.
+    <div class="empty-route-notice">
+      All corridors to the selected shelter are currently blocked. Select an alternate shelter or reopen a corridor.
     </div>
   `;
 }
@@ -758,6 +808,8 @@ function handleRoadSearch(val) {
 
 function toggleRoadDistances() {
   showRoadLabels = !showRoadLabels;
+  const btn = document.getElementById("btnToggleLabels");
+  if (btn) btn.classList.toggle("is-active", showRoadLabels);
   renderSvgMap();
 }
 
@@ -767,11 +819,17 @@ function resetMapZoom() {
 }
 
 /**
- * Alert Banner Helpers
+ * Alert Banner Helpers (Clean crisp SVG indicators)
  */
 function showAlert(type, title, msg) {
   alertBanner.className = `alert-box alert-${type}`;
-  alertIcon.innerText = type === "danger" ? "🚨" : (type === "warning" ? "⚠️" : "✓");
+  if (type === "danger") {
+    alertIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+  } else if (type === "warning") {
+    alertIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+  } else {
+    alertIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  }
   alertTitle.innerText = title;
   alertMessage.innerText = msg;
 }
