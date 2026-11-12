@@ -1,0 +1,435 @@
+﻿{
+  "city_name": "Metropolis SafeCity Simulation",
+  "version": "1.0.0",
+  "average_speed_kmh": 30.0,
+  "risk_penalties": {
+    "Low": 1,
+    "Medium": 3,
+    "High": 6
+  },
+  "locations": [
+    {
+      "id": 0,
+      "code": "LOC_HOSP",
+      "name": "City Hospital",
+      "type": "hospital",
+      "x": 180,
+      "y": 150,
+      "is_shelter": false,
+      "capacity": 250,
+      "description": "Primary healthcare and trauma center"
+    },
+    {
+      "id": 1,
+      "code": "LOC_FIRE",
+      "name": "Fire Station",
+      "type": "fire_station",
+      "x": 360,
+      "y": 130,
+      "is_shelter": false,
+      "capacity": 80,
+      "description": "Central municipal fire fighting command"
+    },
+    {
+      "id": 2,
+      "code": "LOC_POL",
+      "name": "Police Headquarters",
+      "type": "police",
+      "x": 540,
+      "y": 120,
+      "is_shelter": false,
+      "capacity": 100,
+      "description": "Emergency dispatch and police operations"
+    },
+    {
+      "id": 3,
+      "code": "LOC_PARK",
+      "name": "Central Park",
+      "type": "park",
+      "x": 420,
+      "y": 280,
+      "is_shelter": false,
+      "capacity": 1500,
+      "description": "Large open urban green zone"
+    },
+    {
+      "id": 4,
+      "code": "LOC_RAIL",
+      "name": "Railway Station",
+      "type": "station",
+      "x": 160,
+      "y": 320,
+      "is_shelter": false,
+      "capacity": 800,
+      "description": "Intercity rail transport terminal"
+    },
+    {
+      "id": 5,
+      "code": "LOC_BUS",
+      "name": "Bus Terminal",
+      "type": "station",
+      "x": 260,
+      "y": 440,
+      "is_shelter": false,
+      "capacity": 600,
+      "description": "Intracity transit hub"
+    },
+    {
+      "id": 6,
+      "code": "LOC_SCH",
+      "name": "City School",
+      "type": "school",
+      "x": 370,
+      "y": 560,
+      "is_shelter": false,
+      "capacity": 450,
+      "description": "Public secondary school complex"
+    },
+    {
+      "id": 7,
+      "code": "LOC_MALL",
+      "name": "Shopping Mall",
+      "type": "commercial",
+      "x": 640,
+      "y": 240,
+      "is_shelter": false,
+      "capacity": 1200,
+      "description": "Multistore shopping and retail complex"
+    },
+    {
+      "id": 8,
+      "code": "LOC_MKT",
+      "name": "Market",
+      "type": "commercial",
+      "x": 530,
+      "y": 390,
+      "is_shelter": false,
+      "capacity": 500,
+      "description": "Traditional public market square"
+    },
+    {
+      "id": 9,
+      "code": "LOC_RES_N",
+      "name": "Residential Area North",
+      "type": "residential",
+      "x": 700,
+      "y": 120,
+      "is_shelter": false,
+      "capacity": 2000,
+      "description": "High-density northern apartment complexes"
+    },
+    {
+      "id": 10,
+      "code": "LOC_RES_S",
+      "name": "Residential Area South",
+      "type": "residential",
+      "x": 670,
+      "y": 480,
+      "is_shelter": false,
+      "capacity": 1800,
+      "description": "Southern suburban residential neighborhood"
+    },
+    {
+      "id": 11,
+      "code": "LOC_HALL",
+      "name": "Community Hall",
+      "type": "community",
+      "x": 490,
+      "y": 530,
+      "is_shelter": false,
+      "capacity": 350,
+      "description": "Civic gatherings and disaster assembly point"
+    },
+    {
+      "id": 12,
+      "code": "LOC_IND",
+      "name": "Industrial Area",
+      "type": "industrial",
+      "x": 840,
+      "y": 260,
+      "is_shelter": false,
+      "capacity": 400,
+      "description": "Manufacturing facilities and warehousing"
+    },
+    {
+      "id": 13,
+      "code": "LOC_TECH",
+      "name": "Tech Park",
+      "type": "commercial",
+      "x": 810,
+      "y": 420,
+      "is_shelter": false,
+      "capacity": 900,
+      "description": "IT offices and software business campus"
+    },
+    {
+      "id": 14,
+      "code": "SHELTER_A",
+      "name": "Emergency Shelter A",
+      "type": "shelter",
+      "x": 90,
+      "y": 540,
+      "is_shelter": true,
+      "capacity": 3000,
+      "description": "Fortified West Safe Zone & Evacuation Bunker A"
+    },
+    {
+      "id": 15,
+      "code": "SHELTER_B",
+      "name": "Emergency Shelter B",
+      "type": "shelter",
+      "x": 890,
+      "y": 130,
+      "is_shelter": true,
+      "capacity": 2500,
+      "description": "Northeast Highland Emergency Relief Center B"
+    },
+    {
+      "id": 16,
+      "code": "SHELTER_C",
+      "name": "Emergency Shelter C",
+      "type": "shelter",
+      "x": 870,
+      "y": 570,
+      "is_shelter": true,
+      "capacity": 3200,
+      "description": "Southeast Stadium Evacuation Camp C"
+    }
+  ],
+  "roads": [
+    {
+      "id": "R01",
+      "name": "Hospital Link Way",
+      "u": 0,
+      "v": 4,
+      "distance_km": 2.1,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R02",
+      "name": "Emergency Boulevard",
+      "u": 0,
+      "v": 1,
+      "distance_km": 2.5,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R03",
+      "name": "Civic Center Road",
+      "u": 1,
+      "v": 2,
+      "distance_km": 2.3,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R04",
+      "name": "North Park Avenue",
+      "u": 1,
+      "v": 3,
+      "distance_km": 1.8,
+      "risk_level": "Medium",
+      "is_blocked": false
+    },
+    {
+      "id": "R05",
+      "name": "Capitol Highway",
+      "u": 2,
+      "v": 9,
+      "distance_km": 2.0,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R06",
+      "name": "Transit Corridor",
+      "u": 4,
+      "v": 5,
+      "distance_km": 1.6,
+      "risk_level": "Medium",
+      "is_blocked": false
+    },
+    {
+      "id": "R07",
+      "name": "Station Road",
+      "u": 4,
+      "v": 3,
+      "distance_km": 3.2,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R08",
+      "name": "Mall Parkway",
+      "u": 3,
+      "v": 7,
+      "distance_km": 2.7,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R09",
+      "name": "Central Alley (Flood Zone)",
+      "u": 3,
+      "v": 8,
+      "distance_km": 1.5,
+      "risk_level": "High",
+      "is_blocked": false
+    },
+    {
+      "id": "R10",
+      "name": "Grand Vista Road",
+      "u": 2,
+      "v": 7,
+      "distance_km": 2.4,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R11",
+      "name": "Factory Bypass",
+      "u": 7,
+      "v": 12,
+      "distance_km": 2.6,
+      "risk_level": "Medium",
+      "is_blocked": false
+    },
+    {
+      "id": "R12",
+      "name": "Market Express",
+      "u": 7,
+      "v": 8,
+      "distance_km": 2.0,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R13",
+      "name": "Shelter Beta Access",
+      "u": 9,
+      "v": 15,
+      "distance_km": 2.2,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R14",
+      "name": "Hazard Corridor (Industrial)",
+      "u": 12,
+      "v": 15,
+      "distance_km": 1.9,
+      "risk_level": "High",
+      "is_blocked": false
+    },
+    {
+      "id": "R15",
+      "name": "Academic Way",
+      "u": 5,
+      "v": 6,
+      "distance_km": 1.8,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R16",
+      "name": "Shelter Alpha Expressway",
+      "u": 5,
+      "v": 14,
+      "distance_km": 2.4,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R17",
+      "name": "Harbor Route",
+      "u": 4,
+      "v": 14,
+      "distance_km": 3.0,
+      "risk_level": "Medium",
+      "is_blocked": false
+    },
+    {
+      "id": "R18",
+      "name": "Community Boulevard",
+      "u": 6,
+      "v": 11,
+      "distance_km": 1.4,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R19",
+      "name": "Market Lane",
+      "u": 11,
+      "v": 8,
+      "distance_km": 1.7,
+      "risk_level": "Medium",
+      "is_blocked": false
+    },
+    {
+      "id": "R20",
+      "name": "Southern Avenue",
+      "u": 8,
+      "v": 10,
+      "distance_km": 2.1,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R21",
+      "name": "Civic Link",
+      "u": 10,
+      "v": 11,
+      "distance_km": 2.2,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R22",
+      "name": "Enterprise Drive",
+      "u": 12,
+      "v": 13,
+      "distance_km": 2.3,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R23",
+      "name": "Tech Parkway",
+      "u": 13,
+      "v": 10,
+      "distance_km": 2.5,
+      "risk_level": "Medium",
+      "is_blocked": false
+    },
+    {
+      "id": "R24",
+      "name": "Shelter Gamma Link",
+      "u": 13,
+      "v": 16,
+      "distance_km": 1.8,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R25",
+      "name": "Coast Road",
+      "u": 10,
+      "v": 16,
+      "distance_km": 2.7,
+      "risk_level": "Low",
+      "is_blocked": false
+    },
+    {
+      "id": "R26",
+      "name": "River Bridge (Fire Risk)",
+      "u": 0,
+      "v": 3,
+      "distance_km": 3.1,
+      "risk_level": "High",
+      "is_blocked": false
+    }
+  ]
+}

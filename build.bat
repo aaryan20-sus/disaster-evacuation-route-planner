@@ -19,7 +19,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo [2/3] Compiling ADSA Algorithm Validation Suite (tests/algorithm_tests.cpp)...
-g++ -std=c++14 -O2 -Ibackend/include backend/Graph.cpp backend/Algorithms.cpp tests/algorithm_tests.cpp -o bin/algorithm_tests.exe
+g++ -std=c++14 -O2 -static -static-libgcc -static-libstdc++ -Ibackend/include backend/Graph.cpp backend/Algorithms.cpp tests/algorithm_tests.cpp -o bin/algorithm_tests.exe
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Test suite compilation failed.
     pause
@@ -28,7 +28,7 @@ if %ERRORLEVEL% neq 0 (
 echo      - Successfully generated bin/algorithm_tests.exe
 
 echo [3/3] Compiling Evacuation Backend Server (backend/main.cpp)...
-g++ -std=c++14 -O2 -Ibackend/include backend/main.cpp backend/Graph.cpp backend/Algorithms.cpp backend/HttpServer.cpp backend/api.cpp -o bin/evac_server.exe -lws2_32
+g++ -std=c++14 -O2 -static -static-libgcc -static-libstdc++ -Ibackend/include backend/main.cpp backend/Graph.cpp backend/Algorithms.cpp backend/HttpServer.cpp backend/api.cpp -o bin/evac_server.exe -lws2_32
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Evacuation server compilation failed.
     pause

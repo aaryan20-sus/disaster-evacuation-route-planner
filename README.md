@@ -9,6 +9,19 @@
 
 ---
 
+## Quick Start for Windows Users
+
+No C++ compiler (**GCC / MinGW**), **Git Bash**, or **Command Prompt** commands are required when using the prebuilt Windows release package.
+
+1. Download the latest release ZIP from GitHub (**Releases** section).
+2. Extract the ZIP archive to any folder on your computer.
+3. Open the extracted folder.
+4. Double-click **`START.bat`**.
+5. Wait for the backend to become ready and your default browser to open `http://localhost:8080` automatically.
+6. Use the application directly in your browser (keep the `START.bat` console window open while using it; press `Ctrl+C` or close the window to stop safely).
+
+---
+
 ## 1. Project Introduction
 
 The **Intelligent Disaster Evacuation Route Planner** is a high-performance, algorithm-driven emergency response system designed to compute safe, optimal evacuation corridors during urban catastrophes such as flash floods, chemical fires, industrial hazards, and structural collapses. 
