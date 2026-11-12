@@ -214,6 +214,53 @@ Then open any web browser and navigate to:
 http://localhost:8080
 ```
 
+### Running the Project Using Git Bash (Windows)
+
+#### 1. Prerequisites
+- Windows 10/11
+- Git Bash
+- MinGW-w64 / GCC (`g++`)
+- C++ compiler accessible through Windows `PATH`
+
+#### 2. Clone the repository
+```bash
+git clone https://github.com/aaryan20-sus/disaster-evacuation-route-planner.git
+```
+
+#### 3. Navigate to the project root folder
+```bash
+cd disaster-evacuation-route-planner
+```
+
+#### 4. Build the project
+```bash
+cmd.exe /c build.bat
+```
+This compiles the C++ backend, builds the algorithm test executable (`bin/algorithm_tests.exe`), and automatically runs the 8 algorithm validation test cases.
+
+#### 5. Run the application
+```bash
+cmd.exe /c run.bat
+```
+This starts the backend server on port `8080` and opens the application in the default web browser.
+
+#### 6. Open manually if needed
+```text
+http://localhost:8080
+```
+
+#### Alternative: Run the backend directly
+```bash
+./bin/evac_server.exe 8080
+```
+Keep the terminal open while using the application.
+
+### Troubleshooting
+- **If `g++` is not recognized:** Install MinGW-w64 and add its `bin` folder to your Windows `PATH`.
+- **If the executable is missing:** Run `cmd.exe /c build.bat` first to compile `bin/evac_server.exe` and `bin/algorithm_tests.exe`.
+- **If port `8080` is occupied:** Stop the other server process using port `8080` before launching the backend.
+- **If the browser does not open automatically:** Open your browser manually and visit `http://localhost:8080`.
+
 ---
 
 ## 9. Simulated City Topology
