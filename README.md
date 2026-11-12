@@ -16,7 +16,11 @@ This project addresses that problem by separating physical distance from qualita
 
 ## 2. Project Screenshots
 
-No static screenshot files are currently committed in this repository. When launched locally at `http://localhost:8080`, the web dashboard renders:
+When launched locally at `http://localhost:8080`, the web dashboard renders:
+<img width="1907" height="912" alt="Screenshot 2026-11-12 183624" src="https://github.com/user-attachments/assets/940e75fa-b6e2-4b2b-956a-bbdca854eaaa" /><img width="1907" height="912" alt="Screenshot 2026-11-12 183707" src="https://github.com/user-attachments/assets/11d783b3-75c7-4440-bf1f-b1519a327173" />
+<img width="1907" height="907" alt="Screenshot 2026-11-12 183652" src="https://github.com/user-attachments/assets/2c5e7395-b661-448f-a8c9-c41860432ebf" />
+<img width="1903" height="912" alt="Screenshot 2026-11-12 183637" src="https://github.com/user-attachments/assets/09fdf34a-8a9e-4265-aa44-78b72ff23de2" />
+
 
 - **Top Navigation Bar:** Engine connection telemetry, Light/Dark theme toggle, and network reset button.
 - **Route Controls & Solver Telemetry (Left Panel):** Origin and shelter selectors, `Safest Route` / `Shortest Route` strategy toggle, hazard weight slider (`0.5x`–`6.0x`), BFS trigger, and live time/space complexity & composite cost readout.
