@@ -1,33 +1,82 @@
 # Intelligent Disaster Evacuation Route Planner (Windows Release)
 
-This is the standalone, ready-to-run Windows package. **No C++ compiler (GCC/MinGW), Git Bash, or Command Prompt setup is required.**
+A standalone Windows package for computing shortest, safety-weighted, and reachability-aware evacuation routes across a simulated city road network using a C++ graph engine (`Dijkstra` and `BFS`) and a browser-based interactive map.
 
-## How to Run
+**No C++ compiler (GCC/MinGW), Git Bash, or terminal setup is required.**
 
-1. Make sure you have **extracted** the entire ZIP archive (do not run `START.bat` directly from inside a ZIP preview window).
-2. Double-click **`START.bat`**.
-3. A console window will open, start the C++ evacuation backend on port `8080`, and automatically open your default browser at:
+---
+
+## System Requirements
+
+- Windows 10 or Windows 11
+- Any modern web browser (Edge, Chrome, Firefox)
+- Free TCP port `8080` on `127.0.0.1` (`localhost`)
+- No extra runtime installations needed (`bin/evac_server.exe` is statically linked and uses only built-in Windows DLLs: `KERNEL32.dll`, `msvcrt.dll`, `WS2_32.dll`)
+
+---
+
+## Download and Extraction
+
+1. Download the release ZIP archive (`v1.0.0`) from the [GitHub Releases page](https://github.com/aaryan20-sus/disaster-evacuation-route-planner/releases/tag/v1.0.0).
+2. Right-click the ZIP file and select **Extract All...** to extract all files into a normal folder.
+   - Do **not** double-click `START.bat` directly inside a ZIP preview window.
+3. Open the extracted folder. Make sure `START.bat`, `bin/`, `frontend/`, and `data/` are all present together.
+
+---
+
+## How to Launch
+
+1. Double-click **`START.bat`**.
+2. A console window opens, verifies required files and port `8080`, starts `bin\evac_server.exe`, and waits until the backend responds.
+3. Your default web browser automatically opens:
    ```text
    http://localhost:8080
    ```
 4. **Keep the console window open** while using the web application.
-5. To stop the application safely, press `Ctrl+C` inside the console window or close the console window.
 
-## Package Contents
+---
 
-- `START.bat` — One-click Windows launcher
-- `bin/evac_server.exe` — Precompiled standalone C++ backend server (statically linked; uses only built-in Windows DLLs `KERNEL32.dll`, `msvcrt.dll`, `WS2_32.dll`)
-- `frontend/` — Web dashboard (`index.html`, `style.css`, `script.js`)
-- `data/city_data.json` — Simulated city graph dataset (17 locations, 26 roads)
-- `SHA256SUMS.txt` — SHA-256 checksum for integrity & IT verification
+## How to Stop the Application
 
-## Executable Verification (SHA-256)
+- Click inside the `START.bat` console window and press **`Ctrl+C`**, **or**
+- Close the `START.bat` console window (`X` button).
 
-- **File:** `bin/evac_server.exe`
-- **SHA-256:** `326838907F7CDFD8AB0B0451F8C112A060F62F581E4F52369BAB9774568F8740`
-- **Digital Signature Status:** Unsigned (student academic build compiled with MinGW GCC)
+This cleanly shuts down the local C++ backend server.
 
-You or an IT administrator can verify the checksum locally in PowerShell or Command Prompt:
+---
+
+## Troubleshooting
+
+- **Windows SmartScreen ("Windows protected your PC") on a personal computer:**
+  Click **More info** -> **Run anyway**. This warning appears because the binary is an unsigned student build without Microsoft SmartScreen reputation.
+- **Port 8080 is already in use:**
+  Close any previously opened `START.bat` console window or stop the application using port `8080`, then double-click `START.bat` again.
+- **Browser does not open automatically:**
+  Confirm the `START.bat` console says the server is listening, then manually visit `http://localhost:8080`.
+- **Missing files error (`bin\evac_server.exe`, `data\city_data.json`, or `frontend\index.html`):**
+  Re-extract the entire ZIP archive so the folder hierarchy remains intact.
+
+---
+
+## Device Guard Restrictions & IT Approval
+
+On university, corporate, or school-managed Windows devices, **Windows Defender Application Control (Device Guard)** or **AppLocker** may display:
+
+> `evac_server.exe was blocked by your organization's Device Guard policy.`
+
+### Why This Happens
+Managed computers often block unapproved or unsigned executables downloaded from the internet. Even commercially signed executables are not guaranteed to run under strict enterprise allowlists unless explicitly approved by organization IT. Do **not** attempt to disable or bypass Windows security policies.
+
+### How to Request IT Administrator Approval
+Share the following details with your IT Helpdesk so they can inspect and allowlist the binary if permitted by policy:
+
+- **Executable:** `bin/evac_server.exe` (32-bit Windows PE, compiled statically with MinGW GCC)
+- **Digital Signature Status:** Unsigned (`NotSigned`)
+- **SHA-256 Checksum:** `326838907F7CDFD8AB0B0451F8C112A060F62F581E4F52369BAB9774568F8740` (also recorded in [`SHA256SUMS.txt`](SHA256SUMS.txt))
+- **Runtime Behavior:** Runs strictly locally on `127.0.0.1:8080`, requires no administrator elevation, writes no registry keys or system files, and makes no outbound internet requests.
+- **Source Code:** Available for review on [GitHub](https://github.com/aaryan20-sus/disaster-evacuation-route-planner).
+
+IT administrators or users can verify the checksum locally:
 
 ```powershell
 Get-FileHash .\bin\evac_server.exe -Algorithm SHA256
@@ -37,27 +86,4 @@ Get-FileHash .\bin\evac_server.exe -Algorithm SHA256
 certutil -hashfile bin\evac_server.exe SHA256
 ```
 
-## Managed Computers & Windows Device Guard Policy
-
-If you are running this package on a university, corporate, or organization-managed Windows computer, Windows security policies (**Windows Defender Application Control / Device Guard** or **AppLocker**) may display an error such as:
-
-> `evac_server.exe was blocked by your organization's Device Guard policy.`
-
-### Why This Happens
-Managed organizations frequently restrict Windows from running **unapproved or unsigned executables** downloaded from the internet—even when all runtime dependencies are statically linked. Commercial or self-signed code signing also does **not** guarantee execution on a managed computer if the organization's policy only trusts Microsoft-signed apps, its own internal certificate authority, or explicitly allowlisted file hashes.
-
-### How to Request Approval from Your IT Administrator
-Do **not** attempt to disable or bypass organization security controls. Instead, submit an allowlist request to your IT Helpdesk / administrator with the following verification details:
-
-1. **Application:** `bin/evac_server.exe` (Intelligent Disaster Evacuation Route Planner — 3rd-semester ADSA academic project)
-2. **SHA-256 Checksum:** `326838907F7CDFD8AB0B0451F8C112A060F62F581E4F52369BAB9774568F8740`
-3. **Network & System Behavior:** Binds strictly to loopback `127.0.0.1:8080` (`http://localhost:8080`), makes no external internet connections, requires no administrator privileges, and writes no registry keys or system files.
-4. **Source Transparency:** Provide your IT team with the GitHub repository link so they can audit `backend/` and rebuild from source with `build.bat` if required by policy.
-
-If IT approval is not available on a locked-down machine, run the extracted `release/` folder on a **personal, unmanaged Windows 10/11 computer**.
-
-## General Troubleshooting
-
-- **Windows SmartScreen prompt on a personal PC ("Windows protected your PC"):** Click **More info** -> **Run anyway** (expected for unsigned binaries without SmartScreen reputation).
-- **Port 8080 already in use:** Close any previously opened `START.bat` console window or other process listening on port `8080`, then double-click `START.bat` again.
-- **Browser did not open automatically:** Keep the console window open and visit `http://localhost:8080` manually.
+If IT approval is not possible on a managed PC, run the extracted package on a personal, unmanaged Windows 10/11 computer.

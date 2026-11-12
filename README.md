@@ -1,406 +1,253 @@
 # Intelligent Disaster Evacuation Route Planner
-### Advanced Data Structures & Algorithms (ADSA) Project | B.Tech CSE (3rd Semester)
 
-[![C++14](https://img.shields.io/badge/C%2B%2B-14-blue.svg?style=flat-square&logo=c%2B%2B)](https://isocpp.org/)
-[![MinGW GCC](https://img.shields.io/badge/Compiler-MinGW%20GCC-green.svg?style=flat-square)](https://www.mingw-w64.org/)
-[![Winsock2](https://img.shields.io/badge/Networking-Winsock2-orange.svg?style=flat-square)](https://docs.microsoft.com/en-us/windows/win32/winsock/)
-[![Frontend](https://img.shields.io/badge/UI-HTML5%20%2F%20CSS3%20%2F%20SVG%20%2F%20JS-yellow.svg?style=flat-square)](frontend/)
-[![Tests](https://img.shields.io/badge/Tests-8%20Passed-brightgreen.svg?style=flat-square)](tests/)
+An algorithmic emergency evacuation routing system built in **C++14** with an interactive web-based GIS dashboard. Developed as an individual 3rd-semester B.Tech CSE project for **Advanced Data Structures & Algorithms (ADSA)**, the application models an urban road network as a weighted graph and computes shortest, safety-weighted, and reachability-aware evacuation paths in real time over simulated city data.
 
 ---
 
-## Quick Start for Windows Users
+## 1. Introduction
 
-No C++ compiler (**GCC / MinGW**), **Git Bash**, or **Command Prompt** commands are required when using the prebuilt Windows release package.
+During urban emergencies such as floods, fires, or sudden road closures, standard shortest-path navigation can route evacuees directly through high-hazard corridors or toward cut-off destinations.
 
-1. Download the latest release ZIP from GitHub (**Releases** section).
-2. Extract the ZIP archive to any folder on your computer.
-3. Open the extracted folder.
-4. Double-click **`START.bat`**.
-5. Wait for the backend to become ready and your default browser to open `http://localhost:8080` automatically.
-6. Use the application directly in your browser (keep the `START.bat` console window open while using it; press `Ctrl+C` or close the window to stop safely).
+This project addresses that problem by separating physical distance from qualitative corridor hazard penalties (`Low`, `Medium`, `High`), supporting dynamic road blocking and reopening, and exposing a C++ graph engine through a local HTTP server to an interactive browser-based SVG map.
+
+> **Disclaimer:** All locations, road networks, travel speeds, and hazard conditions in this project are simulated for academic demonstration. It is not a certified emergency dispatch system.
 
 ---
 
-## 1. Project Introduction
+## 2. Project Screenshots
 
-The **Intelligent Disaster Evacuation Route Planner** is a high-performance, algorithm-driven emergency response system designed to compute safe, optimal evacuation corridors during urban catastrophes such as flash floods, chemical fires, industrial hazards, and structural collapses. 
+No static screenshot files are currently committed in this repository. When launched locally at `http://localhost:8080`, the web dashboard renders:
 
-The software models an entire city road network as an **Adjacency List Weighted Graph** in modern C++. It incorporates two distinct optimization strategies:
-1. **Shortest Distance Routing (Standard Dijkstra)**: Minimizes physical travel distance ($km$) using a min-heap priority queue.
-2. **Safety-Optimized Multi-Objective Routing (Risk-Weighted Dijkstra)**: Balances travel distance against physical hazard penalties (Low, Medium, High danger levels) with a user-tunable risk multiplier.
-3. **Emergency Reachability Exploration (Breadth-First Search - BFS)**: Analyzes topological network connectivity to identify reachable zones and isolate disconnected city sectors.
-4. **Dynamic Road Mutation**: Allows emergency dispatchers to dynamically block or reopen roads in real-time, instantly recalculating detours without application restarts.
-
-The system features an **interactive SVG-based graphical dashboard** powered by a zero-dependency C++ HTTP REST server running natively on Windows.
-
-> **Note**: This application uses simulated city data for academic and evaluation purposes and does not claim to deliver real-time emergency telemetry.
+- **Top Navigation Bar:** Engine connection telemetry, Light/Dark theme toggle, and network reset button.
+- **Route Controls & Solver Telemetry (Left Panel):** Origin and shelter selectors, `Safest Route` / `Shortest Route` strategy toggle, hazard weight slider (`0.5x`–`6.0x`), BFS trigger, and live time/space complexity & composite cost readout.
+- **Interactive City Network Map (Center):** Vector SVG road topology over a stylized city backdrop with color-coded corridor risk levels, blocked road badges, haloed sector labels, and click-to-select/click-to-block controls.
+- **Road Management Table (Center Bottom):** Searchable and filterable table (`All`, `Blocked`, `High Risk`) with per-corridor `Block` / `Reopen` controls.
+- **Route Information & BFS Reachability (Right Panel):** Distance (`km`), estimated travel time (`min`), hazard score, hops, turn-by-turn navigation steps, and BFS discovery sequence.
 
 ---
 
-## 2. Problem Statement & Real-World Context
+## 3. Key Features
 
-In catastrophic municipal crises:
-- Traditional GPS navigators optimize strictly for travel time or shortest distance, frequently directing evacuees straight into flood zones, active fire corridors, or collapsed bridges.
-- Critical access routes are frequently compromised dynamically as incidents escalate.
-- Emergency responders require situational awareness to determine whether designated evacuation shelters are reachable from specific disaster epicenters.
-
-### Objectives:
-- Model a city network of 17 key urban sectors and 26 bidirectional roads.
-- Implement graph algorithms independently in C++ STL without external algorithmic libraries.
-- Formulate a quantifiable composite safety cost metric:
-  $$\text{Route Cost} = \text{Distance} + (\text{Risk Penalty} \times W_{\text{risk}})$$
-- Provide a clean, modern web interface with real-time SVG visualization and dynamic road toggles.
+- **Interactive City Road Network:** Displays 17 city locations and 26 bidirectional roads on a responsive SVG canvas with Light and Dark modes, toggleable distance/closure badges, and click-to-interact nodes and edges.
+- **Shortest Route Optimization:** Uses Dijkstra's algorithm to find the minimum physical distance (`km`) path while skipping blocked roads.
+- **Safest Route Optimization:** Evaluates a composite cost combining distance and hazard penalty scaled by a user-adjustable safety multiplier (`0.5x` to `6.0x`), while reporting actual physical distance and cumulative hazard score separately.
+- **Dynamic Road Blocking & Reopening:** Blocks or reopens any corridor on the map or in the management table and automatically recalculates the active route.
+- **BFS Reachability Exploration:** Runs Breadth-First Search from the selected origin to list level-order reachable locations and flag isolated sectors.
+- **Multiple Emergency Shelters:** Includes three fortified evacuation shelters (`Emergency Shelter A`, `Emergency Shelter B`, `Emergency Shelter C`) with capacity metadata.
+- **Route Telemetry & Travel Time:** Computes estimated travel time using the configured city average speed (`30.0 km/h`), safety grade classification, and segment-by-segment navigation instructions.
 
 ---
 
-## 3. Technology Stack & Design Decisions
+## 4. Algorithms and Data Structures
 
-| Layer | Technology | Rationale & Academic Justification |
+All core graph structures and algorithms are implemented directly in C++ STL (`backend/Graph.h`, `backend/Graph.cpp`, `backend/Algorithms.h`, `backend/Algorithms.cpp`):
+
+| Component | Implementation | Purpose & Behavior | Time Complexity | Space Complexity |
+| :--- | :--- | :--- | :--- | :--- |
+| **Graph Representation** | Adjacency List (`std::vector<std::vector<Edge>>`) | Stores bidirectional city roads with distance, risk penalty, and blockage flag, paired with `std::unordered_map` lookups and an immutable road snapshot for reset. | $O(V + E)$ | $O(V + E)$ |
+| **Priority Queue** | Min-Heap (`std::priority_queue` with `std::greater`) | Extracts the next lowest-cost unsettled vertex during Dijkstra relaxation. | $O(\log V)$ per push/pop | $O(V)$ |
+| **Shortest Route** | `EvacuationAlgorithms::findShortestRoute` | Runs Dijkstra minimizing physical distance (`edge.distance`), skipping any edge where `edge.is_blocked` is true, and reconstructs the route via parent pointers. | $O((V + E)\log V)$ | $O(V + E)$ |
+| **Risk-Aware Routing** | `EvacuationAlgorithms::findSafestRoute` | Runs Dijkstra minimizing composite edge cost $\text{Distance} + (\text{Risk Penalty} \times W_{\text{risk}})$, where `Low = 1`, `Medium = 3`, `High = 6`. Tracks distance and risk separately. | $O((V + E)\log V)$ | $O(V + E)$ |
+| **Reachability Exploration** | `EvacuationAlgorithms::runBFS` (`std::queue<int>`) | Traverses unblocked corridors level-by-level from a chosen origin to compute reachable vs. unreachable sectors. | $O(V + E)$ | $O(V)$ |
+| **Dynamic Updates** | `CityGraph::blockRoad` / `reopenRoad` | Updates blockage status across both directions of an edge in the adjacency list and road table. | $O(\deg(u) + \deg(v))$ | $O(1)$ |
+
+---
+
+## 5. Technology Stack
+
+| Layer | Technology | Details |
 | :--- | :--- | :--- |
-| **Backend Core** | C++ (C++14 Standard) | High computational efficiency, deterministic memory management, and standard STL containers (`vector`, `queue`, `priority_queue`, `unordered_map`). |
-| **Data Structures** | Graph Adjacency List | Space-efficient representation ($O(V + E)$ vs $O(V^2)$ matrix) suited for sparse road topologies. |
-| **Networking** | Native Windows Winsock2 (`ws2_32`) | Zero external runtime dependencies; natively compiles on MinGW GCC without requiring POSIX thread workarounds. |
-| **Data Ingestion** | JSON (`nlohmann/json` v3.11) | Human-readable city topology specification (`city_data.json`). |
-| **Frontend UI** | HTML5, CSS3, JavaScript | Clean, minimal light-theme GIS workstation dashboard with responsive metrics panels. |
-| **Map Rendering** | Native SVG (Scalable Vector Graphics) | Dynamic vector map supporting live line highlights, animated route pulses, and click-to-block road interactions. |
+| **Backend Engine** | C++14 (MinGW GCC) | Statically linked binary (`-static -static-libgcc -static-libstdc++`) with standard STL containers. |
+| **HTTP Server** | Custom Winsock2 Server (`ws2_32`) | Lightweight multithreaded Windows socket HTTP server (`backend/HttpServer.h`, `backend/HttpServer.cpp`) serving static files and JSON routes on `127.0.0.1:8080`. |
+| **JSON Parsing** | `nlohmann/json` (`v3.11.2`) | Single-header JSON library located at `backend/include/json.hpp`. |
+| **Frontend UI** | HTML5, CSS3, Vanilla JavaScript | Responsive 3-column workstation layout in `frontend/` with Light/Dark theme persistence (`localStorage`). |
+| **Map Visualization** | Native Inline SVG | Interactive map (`viewBox="0 0 1000 680"`) with cartographic backdrop layers, vector sector icons, and route casing highlights. |
+| **Data Storage** | Static JSON Dataset | `data/city_data.json` containing 17 locations, 26 roads, risk penalty weights, and average speed metadata. |
 
 ---
 
-## 4. ADSA Concepts & Mathematical Formulations
+## 6. System Architecture
 
-### A. Graph Representation (Adjacency List)
-A graph $G = (V, E)$ consists of vertices $V$ (city locations) and edges $E$ (bidirectional road segments).
-- An **Adjacency Matrix** requires $O(V^2)$ memory ($17^2 = 289$ cells), which is wasteful for planar road networks where each intersection connects to only 2–4 adjacent roads.
-- An **Adjacency List** stores for each vertex $u$ a dynamic list of incident edges:
-  ```cpp
-  std::vector<std::vector<Edge>> adj;
-  ```
-  This consumes only $O(V + E)$ space and enables iteration over neighboring nodes in $O(\text{deg}(u))$ time.
+The C++ executable loads `data/city_data.json` into `CityGraph` at startup, mounts `frontend/` at `/`, and handles REST-style JSON requests via `EvacuationAPI` over Winsock2.
 
-### B. Dijkstra's Algorithm with Min-Heap Priority Queue
-Dijkstra's algorithm computes the single-source shortest path on non-negative weighted graphs:
-1. Initialize distance array $\text{dist}[v] = \infty$ for all $v \in V$, and $\text{dist}[\text{source}] = 0$.
-2. Push $(0, \text{source})$ into a min-heap priority queue (`std::priority_queue` with `std::greater`).
-3. While the heap is non-empty:
-   - Extract vertex $u$ with minimum tentative distance.
-   - If already visited or settled, skip.
-   - For each incident edge $(u, v)$ with weight $w$:
-     - If the road is marked `is_blocked`, **strictly skip the edge**.
-     - If $\text{dist}[u] + w < \text{dist}[v]$, relax the edge: $\text{dist}[v] = \text{dist}[u] + w$, update parent pointer $\text{parent}[v] = u$, and push $(\text{dist}[v], v)$ into heap.
-4. Backtrack from $\text{destination}$ through parent pointers to reconstruct the path.
+```mermaid
+flowchart LR
+    UI["Browser UI (frontend/index.html, style.css, script.js)"]
+    HTTP["Winsock2 HTTP Server (HttpServer on 127.0.0.1:8080)"]
+    API["REST API Controller (EvacuationAPI)"]
+    ALG["Routing Engine (Dijkstra, Risk-Weighted Dijkstra, BFS)"]
+    GRAPH["CityGraph Adjacency List + Road Snapshot"]
+    JSON["Simulated Dataset (data/city_data.json)"]
 
-### C. Multi-Objective Safety Cost Optimization
-To prevent evacuees from entering hazardous flood or fire corridors, each road segment is annotated with a qualitative hazard score translated into a quantitative penalty:
-- **Low Risk**: Penalty = $1$
-- **Medium Risk**: Penalty = $3$
-- **High Risk**: Penalty = $6$
+    UI <-->|"HTTP GET / POST (JSON & Static Files)"| HTTP
+    HTTP --> API
+    API --> ALG
+    ALG --> GRAPH
+    API <-->|"Block / Reopen / Reset"| GRAPH
+    JSON -->|"Loaded at Startup"| GRAPH
+```
 
-The composite edge cost function is:
-$$C(e) = \text{Distance}(e) + (\text{Risk Penalty}(e) \times W_{\text{risk}})$$
-where $W_{\text{risk}} \ge 0$ is a user-adjustable safety multiplier.
+### Implemented HTTP Endpoints
 
-**Mathematical Proof of Avoidance**:
-Consider a high-risk direct shortcut of $1.5\text{ km}$ (Risk: High = 6) versus a safe detour of $4.7\text{ km}$ (Risk: Low = 2 total across 2 segments):
-- At $W_{\text{risk}} = 0$ (Shortest Path):
-  - Shortcut Cost: $1.5 + (6 \times 0) = 1.5$ (Chosen)
-  - Detour Cost: $4.7 + (2 \times 0) = 4.7$
-- At $W_{\text{risk}} = 2.0$ (Safest Path):
-  - Shortcut Cost: $1.5 + (6 \times 2.0) = 13.5$
-  - Detour Cost: $4.7 + (2 \times 2.0) = 8.7$ (Chosen!)
-The algorithm automatically detours around dangerous shortcuts while tracking **actual physical distance** and **accumulated hazard penalty** separately.
-
-### D. Breadth-First Search (BFS) for Reachability Analysis
-BFS explores vertices level-by-level using a FIFO queue (`std::queue<int>`):
-1. Enqueue source vertex and mark as visited.
-2. Dequeue front vertex $u$, record exploration sequence.
-3. For each neighbor $v$ across unblocked roads:
-   - If not visited, mark visited and enqueue $v$.
-4. Detects isolated partitions if $\text{reachable\_count} < |V|$.
-
----
-
-## 5. Complexity Analysis
-
-| Algorithm / Operation | Time Complexity | Auxiliary Space Complexity | Explanation |
+| Method | Endpoint | Purpose | Request Body |
 | :--- | :--- | :--- | :--- |
-| **Graph Construction** | $O(V + E)$ | $O(V + E)$ | Ingests vertices and edges into adjacency list. |
-| **Dijkstra's Algorithm** | $O((V + E) \log V)$ | $O(V + E)$ | Each vertex is popped once ($O(V \log V)$); each edge is relaxed at most once ($O(E \log V)$). |
-| **Safest Route Dijkstra** | $O((V + E) \log V)$ | $O(V + E)$ | Same min-heap relaxation with composite scalar weights. |
-| **Breadth-First Search** | $O(V + E)$ | $O(V)$ | Every reachable node and edge is examined once. |
-| **Road Block / Reopen** | $O(\text{deg}(u) + \text{deg}(v))$ | $O(1)$ | Direct index lookup via hash map + edge update. |
-| **Network Reset** | $O(V + E)$ | $O(1)$ | Restores backup baseline snapshot. |
+| `GET` | `/api/network` | Full city graph (locations, roads, metadata) | — |
+| `GET` | `/api/locations` | List of all 17 locations | — |
+| `GET` | `/api/roads` | List of all 26 roads and blockage status | — |
+| `POST` | `/api/route/shortest` | Shortest-distance Dijkstra route | `{"source": 0, "destination": 14}` |
+| `POST` | `/api/route/safest` | Risk-weighted Dijkstra route | `{"source": 3, "destination": 8, "risk_weight": 2.0}` |
+| `POST` | `/api/bfs` | BFS reachability traversal from source | `{"source": 0}` |
+| `POST` | `/api/roads/block` | Mark a road as blocked | `{"road_id": "R01"}` |
+| `POST` | `/api/roads/reopen` | Reopen a blocked road | `{"road_id": "R01"}` |
+| `POST` | `/api/reset` | Restore baseline network state | `{}` |
 
 ---
 
-## 6. Project Directory Structure
+## 7. Project Structure
 
 ```text
 ADSA/
-|-- backend/
-|   |-- include/
-|   |   |-- json.hpp               # nlohmann/json single header v3.11.2
-|   |-- Graph.h                    # Adjacency list declarations & structures
-|   |-- Graph.cpp                  # Graph implementation, dynamic mutation
-|   |-- Algorithms.h               # Dijkstra, Safety-Weighted, BFS headers
-|   |-- Algorithms.cpp             # Algorithm implementations & telemetry
-|   |-- HttpServer.h               # Lightweight Winsock2 HTTP Server header
-|   |-- HttpServer.cpp             # Winsock HTTP engine, multi-client routing
-|   |-- api.h                      # REST API controller definitions
-|   |-- api.cpp                    # REST API route handlers & JSON responses
-|   |-- main.cpp                   # Server entrypoint & initialization
-|
-|-- frontend/
-|   |-- index.html                 # Emergency dispatch dashboard UI
-|   |-- style.css                  # Dark navy styling & responsive CSS
-|   |-- script.js                  # Frontend controller & dynamic SVG engine
-|
-|-- data/
-|   |-- city_data.json             # 17 locations, 26 roads simulated dataset
-|
-|-- tests/
-|   |-- algorithm_tests.cpp        # Standalone ADSA unit verification suite
-|
-|-- bin/
-|   |-- evac_server.exe            # Compiled backend server executable
-|   |-- algorithm_tests.exe        # Compiled test suite executable
-|
-|-- build.bat                      # Windows compilation script
-|-- run.bat                        # Windows execution & browser launcher
-|-- .gitignore                     # Git tracking exclusions
-|-- README.md                      # Comprehensive academic documentation
+├── backend/
+│   ├── include/json.hpp         # nlohmann/json v3.11.2 single-header library
+│   ├── Graph.h / Graph.cpp      # Adjacency list graph, JSON loader, dynamic mutations
+│   ├── Algorithms.h / .cpp      # Shortest Dijkstra, Safest Dijkstra, and BFS implementations
+│   ├── HttpServer.h / .cpp      # Lightweight Winsock2 HTTP server
+│   ├── api.h / api.cpp          # HTTP endpoint handlers
+│   └── main.cpp                 # Entry point, relative path resolution, port listener
+├── frontend/
+│   ├── index.html               # Dashboard layout and SVG city map structure
+│   ├── style.css                # Light/Dark GIS theme and component styles
+│   └── script.js                # API integration, SVG rendering, theme & table controllers
+├── data/
+│   └── city_data.json           # Simulated network (17 locations, 26 roads, 3 shelters)
+├── tests/
+│   └── algorithm_tests.cpp      # 8 C++ unit tests covering routing, BFS, blocking, and reset
+├── bin/                         # Compiled executables (generated by build.bat; gitignored)
+├── release/                     # Ready-to-distribute standalone Windows package
+│   ├── START.bat
+│   ├── README.md
+│   ├── SHA256SUMS.txt
+│   ├── bin/evac_server.exe
+│   ├── data/city_data.json
+│   └── frontend/
+├── START.bat                    # Standalone Windows launcher (checks files, port 8080, readiness)
+├── build.bat                    # Compiles static C++ backend/tests and runs unit tests
+├── run.bat                      # Developer launcher (auto-builds if binary missing)
+├── .gitignore                   # Ignores compiled binaries and IDE/OS cache files
+└── README.md                    # Main project documentation
 ```
 
 ---
 
-## 7. Installation & Compilation Instructions
+## 8. Installation and Execution (From Source)
 
 ### Prerequisites
-- **Operating System**: Windows 10 or Windows 11.
-- **Compiler**: MinGW GCC (g++ supporting C++14 or higher).
-- **Libraries**: Winsock2 (`-lws2_32` included with all Windows MinGW installations).
+- Windows 10 or Windows 11
+- MinGW / MinGW-w64 (`g++` supporting C++14 or newer) configured on Windows `PATH`
+- Git Bash (optional) or Command Prompt / PowerShell
 
-### Step 1: Verify MinGW g++
-Open a PowerShell or Command Prompt terminal and run:
-```powershell
-g++ --version
-```
-If `g++` is recognized, proceed to Step 2. If not, add `C:\MinGW\bin` (or your MinGW-w64 bin directory) to your Windows System `PATH`.
+### Build and Run
 
-### Step 2: One-Click Build
-Double-click `build.bat` in the project root folder, or execute:
-```cmd
-build.bat
-```
-This script will:
-1. Compile the algorithm validation suite into `bin/algorithm_tests.exe`.
-2. Compile the evacuation backend server into `bin/evac_server.exe`.
-3. Automatically run the 8 test cases and report verification results.
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/aaryan20-sus/disaster-evacuation-route-planner.git
+   cd disaster-evacuation-route-planner
+   ```
 
-### Manual Compilation Commands (Optional)
-If you wish to compile directly from the terminal:
-```powershell
-# Compile Test Suite
-g++ -std=c++14 -O2 -Ibackend/include backend/Graph.cpp backend/Algorithms.cpp tests/algorithm_tests.cpp -o bin/algorithm_tests.exe
+2. **Compile backend & run C++ unit tests**
+   - In Command Prompt / PowerShell:
+     ```cmd
+     build.bat
+     ```
+   - In Git Bash:
+     ```bash
+     cmd.exe /c build.bat
+     ```
+   `build.bat` compiles `bin/algorithm_tests.exe` and `bin/evac_server.exe` with `-static -static-libgcc -static-libstdc++ -lws2_32` and executes the 8 algorithm verification tests.
 
-# Compile Evacuation Server
-g++ -std=c++14 -O2 -Ibackend/include backend/main.cpp backend/Graph.cpp backend/Algorithms.cpp backend/HttpServer.cpp backend/api.cpp -o bin/evac_server.exe -lws2_32
-```
-
----
-
-## 8. How to Run the Project
-
-### Option A: Using the Launcher Script (Recommended)
-Simply double-click `run.bat` or run:
-```cmd
-run.bat
-```
-This starts the backend on port 8080 and automatically opens `http://localhost:8080` in your default browser.
-
-### Option B: Running from Terminal
-```powershell
-.\bin\evac_server.exe 8080
-```
-Then open any web browser and navigate to:
-```text
-http://localhost:8080
-```
-
-### Running the Project Using Git Bash (Windows)
-
-#### 1. Prerequisites
-- Windows 10/11
-- Git Bash
-- MinGW-w64 / GCC (`g++`)
-- C++ compiler accessible through Windows `PATH`
-
-#### 2. Clone the repository
-```bash
-git clone https://github.com/aaryan20-sus/disaster-evacuation-route-planner.git
-```
-
-#### 3. Navigate to the project root folder
-```bash
-cd disaster-evacuation-route-planner
-```
-
-#### 4. Build the project
-```bash
-cmd.exe /c build.bat
-```
-This compiles the C++ backend, builds the algorithm test executable (`bin/algorithm_tests.exe`), and automatically runs the 8 algorithm validation test cases.
-
-#### 5. Run the application
-```bash
-cmd.exe /c run.bat
-```
-This starts the backend server on port `8080` and opens the application in the default web browser.
-
-#### 6. Open manually if needed
-```text
-http://localhost:8080
-```
-
-#### Alternative: Run the backend directly
-```bash
-./bin/evac_server.exe 8080
-```
-Keep the terminal open while using the application.
-
-### Troubleshooting
-- **If `g++` is not recognized:** Install MinGW-w64 and add its `bin` folder to your Windows `PATH`.
-- **If the executable is missing:** Run `cmd.exe /c build.bat` first to compile `bin/evac_server.exe` and `bin/algorithm_tests.exe`.
-- **If port `8080` is occupied:** Stop the other server process using port `8080` before launching the backend.
-- **If the browser does not open automatically:** Open your browser manually and visit `http://localhost:8080`.
+3. **Launch the application**
+   - Double-click **`START.bat`** in File Explorer, **or** run from terminal:
+     - Command Prompt: `START.bat` (or `run.bat` for auto-build dev launch)
+     - Git Bash: `cmd.exe /c START.bat`
+   - Or run the backend executable directly:
+     ```bash
+     ./bin/evac_server.exe 8080
+     ```
+     Then open `http://localhost:8080` in your browser.
 
 ---
 
-## 9. Simulated City Topology
+## 9. Download Standalone Windows Version
 
-The network models a metropolitan emergency grid featuring:
-- **3 Fortified Emergency Shelters**:
-  - `SHELTER_A`: Emergency Shelter A (West Safe Bunker, capacity: 3,000)
-  - `SHELTER_B`: Emergency Shelter B (Northeast Highland Relief Center, capacity: 2,500)
-  - `SHELTER_C`: Emergency Shelter C (Southeast Stadium Camp, capacity: 3,200)
-- **14 Urban Infrastructure Hubs**:
-  - City Hospital, Fire Station, Police Headquarters, Central Park, Railway Station, Bus Terminal, City School, Shopping Mall, Old Market, Residential North, Residential South, Community Hall, Industrial Area, Tech Park.
-- **26 Interconnecting Roads**:
-  - Distances range from $1.4\text{ km}$ to $3.2\text{ km}$.
-  - Realistic road hazards (e.g. `Central Alley (Flood Zone)` with High Risk, `River Bridge (Fire Risk)` with High Risk).
+Ordinary Windows users **do not need Git Bash, Command Prompt commands, or a C++ compiler (GCC/MinGW)**.
 
----
+Download the prebuilt release archive directly from GitHub Releases:
+**[Download Release v1.0.0](https://github.com/aaryan20-sus/disaster-evacuation-route-planner/releases/tag/v1.0.0)**
 
-## 10. Automated Test Results
+1. Download the release ZIP file from the **v1.0.0** release page.
+2. Extract the entire ZIP archive to any folder on your computer.
+3. Open the extracted folder.
+4. Double-click **`START.bat`**.
+5. Wait a moment for the backend readiness check to pass and your default browser to open `http://localhost:8080` automatically.
+6. Keep the `START.bat` console window open while using the planner; press `Ctrl+C` or close the window when finished.
 
-The test suite validates 8 distinct algorithmic scenarios (`bin/algorithm_tests.exe`):
-
-```text
-=== RUNNING ADSA ALGORITHM VALIDATION SUITE ===
-[CityGraph] Successfully loaded 17 locations and 26 roads.
-
-======================================================
- TEST CASE: 1. Dijkstra Shortest Route Calculation
-======================================================
-Status: SUCCESS
-Source: City Hospital -> Dest: Emergency Shelter A
-Distance: 5.1 km
-Path: City Hospital -> Railway Station -> Emergency Shelter A
--> TEST 1 PASSED!
-
-======================================================
- TEST CASE: 2. Safer Alternative Route vs Hazardous Shortcut
-======================================================
-Shortest Route Path: Central Park -> Market | Distance: 1.5 km | Risk: 6
-Safest Route Path: Central Park -> Shopping Mall -> Market | Distance: 4.7 km | Risk: 2
--> TEST 2 PASSED! Safest route smartly avoided high-risk corridor.
-
-======================================================
- TEST CASE: 3. Road Blocking & Dynamic Recalculation
-======================================================
-Road R01 (Hospital Link Way) is now marked BLOCKED.
-New detour distance: 9.3 km (Detoured successfully)
--> TEST 3 PASSED!
-
-======================================================
- TEST CASE: 4. Reopening Road & Restoring Route
-======================================================
-Road R01 reopened.
-Distance restored to original optimal: 5.1 km
--> TEST 4 PASSED!
-
-======================================================
- TEST CASE: 5. Breadth-First Search (BFS) Traversal
-======================================================
-Total nodes reached from City Hospital: 17
-Traversal Order: City Hospital -> Railway Station -> Fire Station -> Central Park -> ...
--> TEST 5 PASSED!
-
-======================================================
- TEST CASE: 6. Handling Disconnected / Unreachable Locations
-======================================================
-Blocked all ingress roads (R13, R14) to Emergency Shelter B.
-Expected Failure Received: No available evacuation route found.
--> TEST 6 PASSED!
-
-======================================================
- TEST CASE: 7. Handling Invalid Location Inputs
-======================================================
-Error captured: Error: Invalid source or destination location ID provided.
--> TEST 7 PASSED!
-
-======================================================
- TEST CASE: 8. Resetting City Network
-======================================================
-Shelter B is reachable again after reset! Distance: 9 km
--> TEST 8 PASSED!
-
-======================================================
- ALL 8 / 8 ADSA ALGORITHM TESTS PASSED PERFECTLY!
-======================================================
-```
+> **Note on Managed / University Computers:** `bin/evac_server.exe` is currently unsigned (`NotSigned`). Organization-managed PCs with strict **Windows Device Guard (WDAC)** or **AppLocker** policies may block unapproved executables. See [`release/README.md`](release/README.md) and [`release/SHA256SUMS.txt`](release/SHA256SUMS.txt) for SHA-256 verification and IT approval instructions.
 
 ---
 
-## 11. REST API Reference
+## 10. Testing and Validation
 
-| Method | Endpoint | Description | Sample Request / Response |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/network` | Retrieves entire graph JSON (nodes, roads, metadata). | `curl http://localhost:8080/api/network` |
-| `GET` | `/api/locations` | Returns list of all 17 city sectors. | `curl http://localhost:8080/api/locations` |
-| `GET` | `/api/roads` | Returns list of all 26 roads with blockage status. | `curl http://localhost:8080/api/roads` |
-| `POST` | `/api/route/shortest`| Calculates shortest route (Dijkstra). | `{"source": 0, "destination": 14}` |
-| `POST` | `/api/route/safest`  | Calculates risk-weighted safest route. | `{"source": 0, "destination": 14, "risk_weight": 2.5}` |
-| `POST` | `/api/bfs`           | Performs BFS traversal from source. | `{"source": 0}` |
-| `POST` | `/api/roads/block`   | Dynamically blocks a road. | `{"road_id": "R01"}` |
-| `POST` | `/api/roads/reopen`  | Dynamically reopens a blocked road. | `{"road_id": "R01"}` |
-| `POST` | `/api/reset`         | Restores original network topology. | `curl -X POST http://localhost:8080/api/reset` |
+### C++ Unit Suite (`tests/algorithm_tests.cpp`)
+Executing `build.bat` builds and passes **8 / 8** test cases in `bin/algorithm_tests.exe`:
+- Shortest Dijkstra route calculation (`City Hospital -> Emergency Shelter A`: `5.1 km`)
+- Safest Dijkstra avoiding high-risk shortcut (`Central Park -> Market`: `4.7 km` vs `1.5 km` high-risk shortcut)
+- Dynamic road blocking detour (`R01` blocked -> `9.3 km`) and reopening restoration (`5.1 km`)
+- BFS reachability traversal (`17` locations reached)
+- Disconnected shelter detection (`R13` + `R14` blocked), invalid ID handling, and full network reset recovery
 
----
+### Automated Release Verification (`verify_release.py`)
+The standalone `release/` package passed **12 / 12** automated checks (run from an isolated temporary path containing spaces, with MinGW/GCC stripped from `PATH`):
 
-## 12. University Viva Preparation Guide (Q&A)
+| # | Check | Verified Result |
+| :--- | :--- | :--- |
+| 1 | `ABS_PATH_SCAN_OK` | No user-specific or MinGW absolute paths in source, scripts, or `release/` |
+| 2 | `MISSING_EXE_ERROR_HANDLING_OK` | `START.bat` exits non-zero with a clear `[ERROR]` if `evac_server.exe` is missing |
+| 3 | `PORTABLE_START_BAT_LAUNCH_OK` | Launches from an external folder containing spaces (`System32` CWD, no MinGW in `PATH`) |
+| 4 | `FRONTEND_ASSETS_OK` | `/`, `/style.css`, and `/script.js` served with HTTP `200` |
+| 5 | `API_NETWORK_OK` | `GET /api/network` returns `17` locations and `26` roads |
+| 6 | `DIJKSTRA_SHORTEST_OK` | `POST /api/route/shortest` (`0 -> 14`) returns `5.1 km` |
+| 7 | `DIJKSTRA_SAFEST_OK` | `POST /api/route/safest` (`3 -> 8`, weight `2.0`) returns `4.7 km`, risk `2` |
+| 8 | `PORT_OCCUPIED_CHECK_OK` | Duplicate `START.bat` detects busy port `8080` and exits cleanly |
+| 9 | `BFS_OK` | `POST /api/bfs` reaches `17` locations |
+| 10 | `BLOCK_REOPEN_OK` | Blocking `R01` produces `9.3 km` detour; reopening restores `5.1 km` |
+| 11 | `RESET_NETWORK_OK` | `POST /api/reset` restores shelter reachability after blocking `R13` and `R14` |
+| 12 | `IMMEDIATE_EXIT_DIAGNOSTIC_OK` | Immediate server failure prints Device Guard / startup diagnostic guidance |
 
-Here are the most common questions professors ask during an ADSA project viva and how to answer them:
-
-### Q1: Why did you choose an Adjacency List over an Adjacency Matrix?
-**Answer**: In urban road networks, graphs are planar and sparse—each intersection has only a few connecting roads. An Adjacency Matrix takes $O(V^2)$ memory and requires $O(V)$ iterations just to find the neighbors of a node. An Adjacency List takes only $O(V + E)$ space, and iterating over adjacent edges takes $O(\text{deg}(u))$ time, drastically speeding up Dijkstra's algorithm.
-
-### Q2: How does Dijkstra's algorithm work and why do we use a priority queue?
-**Answer**: Dijkstra's algorithm solves the single-source shortest path problem on graphs with non-negative edge weights. Using a naive array to find the minimum distance node takes $O(V^2)$ time. By utilizing a min-heap priority queue (`std::priority_queue`), extracting the minimum distance node takes $O(\log V)$, reducing overall complexity to $O((V + E) \log V)$.
-
-### Q3: How do you handle road blockages in C++?
-**Answer**: Each road edge contains a boolean flag `is_blocked`. When Dijkstra relaxes outgoing edges from node $u$, it first checks `if (edge.is_blocked) continue;`. When a road is blocked via the REST API, the road's `is_blocked` flag is set to `true` in both directions in $O(1)$ amortized time. Subsequent route queries naturally avoid the road and find detours.
-
-### Q4: What is the purpose of Breadth-First Search (BFS) in this project?
-**Answer**: While Dijkstra finds the shortest weighted path between two specific points, BFS explores the network layer-by-layer to assess overall reachability. In an emergency, BFS identifies all sectors that can still be reached from a dispatch center using currently open roads, and immediately flags completely cut-off zones.
-
-### Q5: How is safety mathematically balanced against travel distance?
-**Answer**: We formulate a multi-objective cost function: $\text{Cost} = \text{Distance} + (\text{Risk Penalty} \times W_{\text{risk}})$. Low risk roads have a penalty of 1, Medium risk has 3, and High risk has 6. By adjusting $W_{\text{risk}}$, the user controls how aggressively the planner steers away from hazardous zones (like flood zones or fire hazards), even if the hazardous path is physically shorter.
+*Scope note:* End-to-end automated checks exercised the HTTP endpoints and batch launcher directly via Python `urllib.request`; interactive browser UI clicks and literal OS Device Guard group-policy triggers (`1260`/`4551`) were not emulated in the automated script.
 
 ---
 
-## 13. Future Improvements
-1. **Dynamic Edge Speeds**: Support time-varying vehicular congestion based on crowd evacuation volume.
-2. **Turn Penalties & Elevation**: Incorporate topological slope data for flood runoff modeling.
-3. **Multi-Source Evacuation**: Automatically match evacuees to the nearest available shelter based on real-time shelter capacity constraints.
-4. **Mobile GPS Integration**: Real-time geolocation tracking using progressive web app (PWA) standards.
+## 11. Limitations
+
+- **Simulated Dataset:** All city locations, coordinates, distances, risk categories, and `30.0 km/h` average speed come from `data/city_data.json` and do not reflect real-world geography or live incidents.
+- **Not Certified for Real Emergencies:** This software is an educational ADSA project and must not be used for real-world emergency dispatch or life-safety routing, which requires verified GIS road data, live traffic/hazard feeds, and authoritative shelter status.
+- **Windows / Localhost Only:** `HttpServer` uses Windows Winsock2 (`ws2_32`) on `127.0.0.1:8080` and is intended for single-user local execution on Windows 10/11.
+- **Unsigned Binary:** Release builds are not Authenticode-signed, so SmartScreen prompts on personal PCs or Device Guard blocks on managed institutional computers can occur.
+
+---
+
+## 12. Future Enhancements
+
+- **Real-Time Traffic Integration:** Incorporate live road speed and congestion multipliers into edge weights.
+- **Live Fire and Flood Alerts:** Dynamically ingest external disaster feeds to escalate edge risk penalties or trigger automatic road closures.
+- **GPS-Based Location:** Detect the user's current coordinates to automatically select the nearest graph sector.
+- **Real-World Map Integration:** Replace or back the simulated Cartesian coordinates with real road networks and tile maps.
+- **Sensor-Based Hazard Detection:** Connect IoT water-level, smoke, or structural sensors directly to road risk status updates.
+
+---
+
+## 13. License and Project Information
+
+- **Course Context:** Advanced Data Structures & Algorithms (ADSA) — 3rd Semester B.Tech CSE Individual Project
+- **Repository:** [disaster-evacuation-route-planner](https://github.com/aaryan20-sus/disaster-evacuation-route-planner)
+- **License Status:** No `LICENSE` file is currently included in this repository. All rights remain with the project author unless a formal license is added later.
